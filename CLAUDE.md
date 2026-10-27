@@ -54,7 +54,8 @@ make px4_sitl
 
 - [x] 1. 환경 구축 — QGC 설치, PX4 v1.17.0 클론, venv, `make px4_sitl` 빌드 성공 (2026-10-27)
 - [x] 2. PX4 SITL 실행 — `make px4_sitl sihsim_quadx`, `pxh>`에서 `commander status` → Disarmed / Hold / failsafe no 확인 (2026-10-27)
-- [ ] 3. QGroundControl 연결
+- [x] 3. QGroundControl 연결 — QGC가 UDP 14550 자동 연결, 툴바 Ready / Hold, 지도에 기체 표시 (취리히 Irchelpark) (2026-10-27)
+  - 첫 실행 시 초기 설정 창 + macOS 로컬 네트워크 권한 허용 필요. Spotlight에 안 잡히면 `open -a QGroundControl`
 - [ ] 4. Drone Telemetry 확인 (GPS, Altitude, Heading, Battery, Flight Mode, Armed)
 - [ ] 5. ARM
 - [ ] 6. TAKEOFF
