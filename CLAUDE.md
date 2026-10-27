@@ -56,7 +56,9 @@ make px4_sitl
 - [x] 2. PX4 SITL 실행 — `make px4_sitl sihsim_quadx`, `pxh>`에서 `commander status` → Disarmed / Hold / failsafe no 확인 (2026-10-27)
 - [x] 3. QGroundControl 연결 — QGC가 UDP 14550 자동 연결, 툴바 Ready / Hold, 지도에 기체 표시 (취리히 Irchelpark) (2026-10-27)
   - 첫 실행 시 초기 설정 창 + macOS 로컬 네트워크 권한 허용 필요. Spotlight에 안 잡히면 `open -a QGroundControl`
-- [ ] 4. Drone Telemetry 확인 (GPS, Altitude, Heading, Battery, Flight Mode, Armed)
+- [x] 4. Drone Telemetry 확인 — QGC 화면 + MAVLink Inspector (2026-10-27)
+  - 화면: Ready(Disarmed) / Hold / GPS 10 sats HDOP 0.7 / Battery 100% / Heading 358° / Alt 0.0 m
+  - GLOBAL_POSITION_INT lat=473977430, lon=85455930 (degE7 정수 → 47.3977430, 8.5455930), HEARTBEAT 1.0Hz
 - [ ] 5. ARM
 - [ ] 6. TAKEOFF
 - [ ] 7. LAND
