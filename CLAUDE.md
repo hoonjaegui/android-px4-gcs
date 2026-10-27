@@ -53,7 +53,7 @@ make px4_sitl
 ### Week 1 — PX4 생태계 이해 + Drone 직접 비행 (브랜치 `Week1`)
 
 - [x] 1. 환경 구축 — QGC 설치, PX4 v1.17.0 클론, venv, `make px4_sitl` 빌드 성공 (2026-10-27)
-- [ ] 2. PX4 SITL 실행 (`make px4_sitl sihsim_quadx`)
+- [x] 2. PX4 SITL 실행 — `make px4_sitl sihsim_quadx`, `pxh>`에서 `commander status` → Disarmed / Hold / failsafe no 확인 (2026-10-27)
 - [ ] 3. QGroundControl 연결
 - [ ] 4. Drone Telemetry 확인 (GPS, Altitude, Heading, Battery, Flight Mode, Armed)
 - [ ] 5. ARM
