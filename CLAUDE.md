@@ -62,10 +62,19 @@ make px4_sitl
 - [x] 5. ARM — QGC 툴바 Ready → Arm → 슬라이더 (2026-10-28)
   - PX4 로그: `Armed by external command` → 약 10초 후 `Disarmed by auto preflight disarming` (`COM_DISARM_PRFLT`, 이륙 안 하면 자동 Disarm)
   - MAVLink Inspector: `HEARTBEAT.base_mode` = 129 = 128(`SAFETY_ARMED`) + 1(`CUSTOM_MODE_ENABLED`). Disarm 시 1
-  - 이슈: 두 번째 Disarm 직후 SIH의 `sensor_baro`/`sensor_mag` 갱신이 멈춤 (`MAG #0 failed: TIMEOUT!`, `Preflight Fail: No valid data from Baro/Compass`). accel/gps는 정상. 원인 미확인, SITL 재시작으로 복구
   - Claude가 SITL을 백그라운드로 띄울 땐 stdin을 FIFO로 연결해야 함 (stdin 없으면 `pxh>` 무한 출력으로 로그 폭증). FIFO에 명령을 써서 pxh 조작 가능
-- [ ] 6. TAKEOFF
-- [ ] 7. LAND
+- [x] 6. TAKEOFF — QGC Takeoff 버튼, 10m (2026-10-28)
+  - 로그: `Armed by external command` → `Takeoff detected` → 모드 Hold(호버링)
+  - `vehicle_local_position.z` ≈ -9.87 (NED 좌표계라 위쪽이 음수)
+  - 시뮬 배터리는 ARM 후 `SIM_BAT_DRAIN`(60초)에 따라 줄다가 `SIM_BAT_MIN_PCT`(50%)에서 멈춤. 정상
+- [x] 7. LAND — QGC Land 버튼 (2026-10-28)
+  - 로그: `Landing detected` → `Disarmed by landing` (착지 감지 시 자동 Disarm), z ≈ 0.01
+
+**알려진 이슈 (macOS + SIH, PX4 v1.17.0)**: ARM/Disarm 시점에 `wq:hp_default`의 시뮬 센서 모듈(`sensor_baro_sim`, `sensor_mag_sim`, `sensor_gps_sim`, `battery_simulator`) 일부 또는 전부가 실행을 멈춤. 같은 큐의 `system_power_simulator`, `simulator_sih`는 정상
+  - 증상: QGC Not Ready, `Preflight Fail: No valid data from Baro 0 / Compass 0`, `Battery unhealthy`, `MAG #0 failed: TIMEOUT!`
+  - 확인: pxh에서 `perf`를 두 번 실행해 `*_sim: cycle` 카운트가 늘지 않으면 멈춘 것
+  - 복구: `battery_simulator`만 멈췄으면 `battery_simulator stop` → `start`. baro가 멈췄으면 재시작해도 새 인스턴스(#1)가 생기고 Baro 0은 그대로라 **SITL 재시작 필요**
+  - 근본 원인 미확인, 웹 검색으로도 알려진 이슈 못 찾음
 - [ ] 8. RTL
 
 완료 조건: `QGroundControl → MAVLink → PX4` 관계 설명 가능 + GCS / Flight Controller / Telemetry / Command / MAVLink / MAVSDK / SITL 구분 가능.
