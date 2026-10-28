@@ -59,7 +59,11 @@ make px4_sitl
 - [x] 4. Drone Telemetry 확인 — QGC 화면 + MAVLink Inspector (2026-10-27)
   - 화면: Ready(Disarmed) / Hold / GPS 10 sats HDOP 0.7 / Battery 100% / Heading 358° / Alt 0.0 m
   - GLOBAL_POSITION_INT lat=473977430, lon=85455930 (degE7 정수 → 47.3977430, 8.5455930), HEARTBEAT 1.0Hz
-- [ ] 5. ARM
+- [x] 5. ARM — QGC 툴바 Ready → Arm → 슬라이더 (2026-10-28)
+  - PX4 로그: `Armed by external command` → 약 10초 후 `Disarmed by auto preflight disarming` (`COM_DISARM_PRFLT`, 이륙 안 하면 자동 Disarm)
+  - MAVLink Inspector: `HEARTBEAT.base_mode` = 129 = 128(`SAFETY_ARMED`) + 1(`CUSTOM_MODE_ENABLED`). Disarm 시 1
+  - 이슈: 두 번째 Disarm 직후 SIH의 `sensor_baro`/`sensor_mag` 갱신이 멈춤 (`MAG #0 failed: TIMEOUT!`, `Preflight Fail: No valid data from Baro/Compass`). accel/gps는 정상. 원인 미확인, SITL 재시작으로 복구
+  - Claude가 SITL을 백그라운드로 띄울 땐 stdin을 FIFO로 연결해야 함 (stdin 없으면 `pxh>` 무한 출력으로 로그 폭증). FIFO에 명령을 써서 pxh 조작 가능
 - [ ] 6. TAKEOFF
 - [ ] 7. LAND
 - [ ] 8. RTL
