@@ -75,7 +75,10 @@ make px4_sitl
   - 확인: pxh에서 `perf`를 두 번 실행해 `*_sim: cycle` 카운트가 늘지 않으면 멈춘 것
   - 복구: `battery_simulator`만 멈췄으면 `battery_simulator stop` → `start`. baro가 멈췄으면 재시작해도 새 인스턴스(#1)가 생기고 Baro 0은 그대로라 **SITL 재시작 필요**
   - 근본 원인 미확인, 웹 검색으로도 알려진 이슈 못 찾음
-- [ ] 8. RTL
+  - 재현 기록 (모두 2026-10-28): ①2번째 Disarm에 baro+mag ②ARM에 baro+mag+gps+battery ③LAND Disarm에 battery ④RTL Disarm에 gps. 거의 매번 발생하므로 **비행 전 SITL 재시작을 기본으로**
+- [x] 8. RTL — Takeoff → 지도 클릭 Go to location → Return (2026-10-28)
+  - 로그: `RTL: start return at 521 m (31 m above destination)` (AMSL, 홈 ≈ 489m) → `RTL: land at destination` → `Landing detected` → `Disarmed by landing`
+  - 최종 위치 홈 기준 x=0.26, y=1.36m (약 1.4m 오차)
 
 완료 조건: `QGroundControl → MAVLink → PX4` 관계 설명 가능 + GCS / Flight Controller / Telemetry / Command / MAVLink / MAVSDK / SITL 구분 가능.
 
