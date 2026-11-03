@@ -30,8 +30,8 @@ PX4 소스는 이 레포 밖 `~/PX4-Autopilot`에 둔다.
 brew install cmake ninja ccache python@3.12
 brew install --cask qgroundcontrol
 
-# 2. PX4 소스 (v1.17.0)
-git clone --branch v1.17.0 --recursive --shallow-submodules --depth 1 \
+# 2. PX4 소스 (v1.18.0-rc1 — v1.17.0은 SIH 센서 멈춤 버그, 아래 Week 1 알려진 이슈 참고)
+git clone --branch v1.18.0-rc1 --recursive --shallow-submodules --depth 1 \
   https://github.com/PX4/PX4-Autopilot.git ~/PX4-Autopilot
 
 # 3. Python 의존성 (시스템 python 대신 venv)
@@ -46,7 +46,21 @@ make px4_sitl
 
 시뮬레이터: Gazebo 대신 **SIH**(PX4 내장 물리 시뮬레이터) — `make px4_sitl sihsim_quadx`.
 
-검증된 환경: Apple Silicon(arm64), macOS 15.0, RAM 32GB / QGC 5.1.5 / PX4 v1.17.0 / Python 3.12.16 / cmake 4.4.4
+검증된 환경: Apple Silicon(arm64), macOS 15.0, RAM 32GB / QGC 5.1.5 / PX4 v1.18.0-rc1 (Week 1은 v1.17.0) / Python 3.12.16 / cmake 4.4.4
+Android: Android Studio JBR 21 (`JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"`), AGP 9.2.1, Gradle 9.4.1, MAVSDK Java/mavsdk-server 4.1.0
+
+### Android 앱을 SITL에 붙이기
+
+앱 안에서 mavsdk_server가 돌고, PX4의 Onboard 링크(UDP 14540)를 받는다. QGC(14550)와 동시 연결 가능.
+
+**실기기 (권장)** — 회사 Wi-Fi는 맥↔폰 통신이 막혀 있어(ping 100% 손실) USB로 연결. `adb reverse`는 TCP만 되므로 브리지 사용:
+```bash
+adb reverse tcp:5760 tcp:5760
+python3 tools/mavlink_udp_tcp_bridge.py          # PX4 UDP 14540 <-> TCP 5760
+./gradlew installDebug -Pgcs.connectionUrl=tcpout://127.0.0.1:5760
+```
+
+**에뮬레이터** — `adb emu redir add udp:14540:14540` 후 기본 빌드(`udpin://0.0.0.0:14540`). 단 Pixel_10(API 37.2, 16KB) 에뮬레이터는 VM 전체가 주기적으로 멈칫해서(앱을 꺼도 system_server가 프레임 스킵) heartbeat timeout으로 연결이 끊겼다 붙었다 함(90초에 4회, 실기기는 0회). 브리지와 동시 사용 불가(같은 호스트 포트 14540).
 
 ## 진행 상태
 
@@ -70,11 +84,12 @@ make px4_sitl
 - [x] 7. LAND — QGC Land 버튼 (2026-10-28)
   - 로그: `Landing detected` → `Disarmed by landing` (착지 감지 시 자동 Disarm), z ≈ 0.01
 
-**알려진 이슈 (macOS + SIH, PX4 v1.17.0)**: ARM/Disarm 시점에 `wq:hp_default`의 시뮬 센서 모듈(`sensor_baro_sim`, `sensor_mag_sim`, `sensor_gps_sim`, `battery_simulator`) 일부 또는 전부가 실행을 멈춤. 같은 큐의 `system_power_simulator`, `simulator_sih`는 정상
+**알려진 이슈 (macOS + SIH, PX4 v1.17.0) — Week 2에서 원인 확인, v1.18.0-rc1로 해결**: ARM/Disarm 시점에 `wq:hp_default`의 시뮬 센서 모듈(`sensor_baro_sim`, `sensor_mag_sim`, `sensor_gps_sim`, `battery_simulator`) 일부 또는 전부가 실행을 멈춤. 같은 큐의 `system_power_simulator`, `simulator_sih`는 정상
   - 증상: QGC Not Ready, `Preflight Fail: No valid data from Baro 0 / Compass 0`, `Battery unhealthy`, `MAG #0 failed: TIMEOUT!`
   - 확인: pxh에서 `perf`를 두 번 실행해 `*_sim: cycle` 카운트가 늘지 않으면 멈춘 것
   - 복구: `battery_simulator`만 멈췄으면 `battery_simulator stop` → `start`. baro가 멈췄으면 재시작해도 새 인스턴스(#1)가 생기고 Baro 0은 그대로라 **SITL 재시작 필요**
-  - 근본 원인 미확인, 웹 검색으로도 알려진 이슈 못 찾음
+  - ~~근본 원인 미확인~~ → **원인 (2026-11-03)**: POSIX `drv_hrt.cpp`의 `hrt_call_invoke()`가 콜백 중 lock을 풀어 다른 스레드가 HRT 콜아웃 큐(단일 연결 리스트)를 동시에 수정 → 리스트가 찢어져 `ScheduleOnInterval` 모듈들이 짝지어 영구 정지. ARM/Disarm이 아니라 시뮬 시간 특정 시점에 발생(battery+mag ≈17.7s, gps+baro ≈36.6s)
+  - 업스트림 수정: PX4 커밋 `9b62a17` "fix(WorkQueue): fix lifetime race between Run() and destruction" (recursive mutex로 콜백 중 lock 유지). v1.17.x엔 없고 v1.18 계열에만 있음 → **v1.18.0-rc1로 업그레이드**, ARM/Disarm 4회 반복에도 4개 센서 정상. v1.17.0 소스는 `~/PX4-Autopilot-v1.17.0`에 백업
   - 재현 기록 (모두 2026-10-28): ①2번째 Disarm에 baro+mag ②ARM에 baro+mag+gps+battery ③LAND Disarm에 battery ④RTL Disarm에 gps. 거의 매번 발생하므로 **비행 전 SITL 재시작을 기본으로**
 - [x] 8. RTL — Takeoff → 지도 클릭 Go to location → Return (2026-10-28)
   - 로그: `RTL: start return at 521 m (31 m above destination)` (AMSL, 홈 ≈ 489m) → `RTL: land at destination` → `Landing detected` → `Disarmed by landing`
@@ -82,4 +97,15 @@ make px4_sitl
 
 완료 조건: `QGroundControl → MAVLink → PX4` 관계 설명 가능 + GCS / Flight Controller / Telemetry / Command / MAVLink / MAVSDK / SITL 구분 가능.
 
-### Week 2~4 — 미시작
+### Week 2 — Android GCS Telemetry (브랜치 `Week2`, main에서 분기)
+
+- [x] 1. Android 프로젝트 생성 — 사용자가 Android Studio로 생성(Compose, AGP 9.2.1). `core-ktx 1.19.1`이 API 37 요구 → compileSdk 36.1→37.1 (2026-11-03)
+- [x] 2~3. MAVSDK 연결 + Vehicle Discovery — `MavsdkServer.run(url)`은 첫 HEARTBEAT까지 블로킹(=Discovery), 반환된 gRPC 포트로 `io.mavsdk.System` 생성. `core.connectionState`로 Connected/Disconnected. SITL 종료 → heartbeat timeout(3s) → DISCONNECTED → 재시작 시 자동 재연결 확인 (2026-11-03)
+  - `mavsdk-server` AAR이 `libc++_shared.so`를 안 담고 있어 크래시 → NDK r27.3 것을 `app/src/main/jniLibs`에 번들 (16KB 정렬 확인)
+- [x] 4. Telemetry — Battery → GPS → Altitude → Heading → Flight Mode(+Armed) 순서로 하나씩 연결 (2026-11-03)
+  - 구조: `MavsdkDroneDataSource`(MAVSDK는 여기만) → `DefaultDroneRepository`(스트림별 `DroneState` 갱신 함수를 merge+scan) → `StateFlow<DroneState>` → `DashboardViewModel` → Compose
+  - Battery `remainingPercent`는 MAVSDK 4.x에서 0~100. Altitude는 `relativeAltitudeM`(홈 기준), GPS는 fix ≥ 3D면 available
+- [x] 5. Compose Dashboard + 완료 조건 — QGC로 Takeoff → Go to → RTL → 착륙하는 동안 폰 앱에서 Flight Mode(HOLD→RETURN→HOLD), Armed, Altitude(0→2.7→29.8m→0), Heading(4°→93°→276°→3°), 위경도가 동시에 변함, 연결 끊김 없음 (2026-11-03)
+  - 우연히 겪은 Failure: v1.17.0 센서 멈춤 중 앱이 GPS NO FIX / Flight Mode LAND(blind land failsafe)를 그대로 표시 → Week 4 소재
+
+### Week 3~4 — 미시작
