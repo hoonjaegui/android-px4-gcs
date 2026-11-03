@@ -43,6 +43,7 @@ class DefaultDroneRepository(
                     altitude = it.relativeAltitudeM.toDouble(),
                 )
             },
+            dataSource.headingDeg.toTelemetryUpdate { copy(heading = it) },
         )
             .scan(DroneState()) { state, update -> update(state) }
             .stateIn(scope, SharingStarted.Eagerly, DroneState())

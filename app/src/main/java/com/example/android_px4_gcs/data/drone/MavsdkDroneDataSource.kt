@@ -66,6 +66,10 @@ class MavsdkDroneDataSource(
     val position: Flow<Telemetry.Position> =
         telemetry("position") { it.telemetry.position.asFlow() }
 
+    /** 기수 방향 (0~360°, 북=0, 시계방향). */
+    val headingDeg: Flow<Double> =
+        telemetry("heading") { it.telemetry.heading.asFlow().map { h -> h.headingDeg } }
+
     /** system 발견 후에만 구독하는 Telemetry 스트림 헬퍼. */
     private fun <T> telemetry(name: String, select: (System) -> Flow<T>): Flow<T> =
         system.flatMapLatest { sys -> if (sys == null) emptyFlow() else select(sys) }.safe(name)
