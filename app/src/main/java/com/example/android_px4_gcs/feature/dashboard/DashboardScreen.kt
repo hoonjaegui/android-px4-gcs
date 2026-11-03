@@ -43,6 +43,7 @@ fun DashboardScreen(state: DroneState, modifier: Modifier = Modifier) {
             value = if (state.gpsAvailable) "3D FIX" else "NO FIX",
             valueColor = if (state.gpsAvailable) Color.Unspecified else Color(0xFFC62828),
         )
+        TelemetryItem("Altitude", state.altitude?.let { "%.1fm".format(it) } ?: NO_DATA)
         TelemetryItem("Latitude", state.latitude?.let { "%.7f".format(it) } ?: NO_DATA)
         TelemetryItem("Longitude", state.longitude?.let { "%.7f".format(it) } ?: NO_DATA)
     }

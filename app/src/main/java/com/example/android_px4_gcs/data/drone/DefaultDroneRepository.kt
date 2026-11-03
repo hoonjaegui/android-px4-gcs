@@ -35,7 +35,14 @@ class DefaultDroneRepository(
             dataSource.isConnected.map { connected -> Update { it.copy(connected = connected) } },
             dataSource.batteryPercent.toTelemetryUpdate { copy(batteryPercent = it.roundToInt()) },
             dataSource.gpsInfo.toTelemetryUpdate { copy(gpsAvailable = it.fixType.hasPositionFix()) },
-            dataSource.position.toTelemetryUpdate { copy(latitude = it.latitudeDeg, longitude = it.longitudeDeg) },
+            dataSource.position.toTelemetryUpdate {
+                copy(
+                    latitude = it.latitudeDeg,
+                    longitude = it.longitudeDeg,
+                    // 홈(이륙 지점) 기준 고도. absoluteAltitudeM은 해발(AMSL) 고도.
+                    altitude = it.relativeAltitudeM.toDouble(),
+                )
+            },
         )
             .scan(DroneState()) { state, update -> update(state) }
             .stateIn(scope, SharingStarted.Eagerly, DroneState())
