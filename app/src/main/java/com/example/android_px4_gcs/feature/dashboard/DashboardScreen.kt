@@ -37,8 +37,11 @@ fun DashboardScreen(state: DroneState, modifier: Modifier = Modifier) {
             value = if (state.connected) "CONNECTED" else "DISCONNECTED",
             valueColor = if (state.connected) Color(0xFF2E7D32) else Color(0xFFC62828),
         )
+        TelemetryItem("Battery", state.batteryPercent?.let { "$it%" } ?: NO_DATA)
     }
 }
+
+private const val NO_DATA = "--"
 
 @Composable
 private fun TelemetryItem(label: String, value: String, valueColor: Color = Color.Unspecified) {

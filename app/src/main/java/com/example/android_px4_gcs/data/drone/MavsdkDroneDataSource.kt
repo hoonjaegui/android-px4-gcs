@@ -53,6 +53,10 @@ class MavsdkDroneDataSource(
         else sys.core.connectionState.asFlow().map { it.isConnected }
     }.safe("connectionState")
 
+    /** 배터리 잔량 (0~100%). */
+    val batteryPercent: Flow<Float> =
+        telemetry("battery") { it.telemetry.battery.asFlow().map { b -> b.remainingPercent } }
+
     /** system 발견 후에만 구독하는 Telemetry 스트림 헬퍼. */
     private fun <T> telemetry(name: String, select: (System) -> Flow<T>): Flow<T> =
         system.flatMapLatest { sys -> if (sys == null) emptyFlow() else select(sys) }.safe(name)
