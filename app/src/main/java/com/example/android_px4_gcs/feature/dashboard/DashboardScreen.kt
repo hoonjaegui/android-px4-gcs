@@ -29,13 +29,19 @@ fun DashboardRoute(
 fun DashboardScreen(state: DroneState, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text("PX4 GCS", style = MaterialTheme.typography.headlineMedium)
         TelemetryItem(
             label = "Connection",
             value = if (state.connected) "CONNECTED" else "DISCONNECTED",
             valueColor = if (state.connected) Color(0xFF2E7D32) else Color(0xFFC62828),
+        )
+        TelemetryItem("Flight Mode", state.flightMode ?: NO_DATA)
+        TelemetryItem(
+            label = "Armed",
+            value = if (state.armed) "TRUE" else "FALSE",
+            valueColor = if (state.armed) Color(0xFFE65100) else Color.Unspecified,
         )
         TelemetryItem("Battery", state.batteryPercent?.let { "$it%" } ?: NO_DATA)
         TelemetryItem(

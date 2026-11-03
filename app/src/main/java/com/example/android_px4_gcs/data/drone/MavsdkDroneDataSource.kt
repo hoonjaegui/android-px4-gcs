@@ -70,6 +70,14 @@ class MavsdkDroneDataSource(
     val headingDeg: Flow<Double> =
         telemetry("heading") { it.telemetry.heading.asFlow().map { h -> h.headingDeg } }
 
+    /** ARM 여부 (HEARTBEAT.base_mode의 SAFETY_ARMED 비트). */
+    val armed: Flow<Boolean> =
+        telemetry("armed") { it.telemetry.armed.asFlow() }
+
+    /** 비행 모드 (HEARTBEAT.custom_mode를 MAVSDK가 해석한 값). */
+    val flightMode: Flow<Telemetry.FlightMode> =
+        telemetry("flightMode") { it.telemetry.flightMode.asFlow() }
+
     /** system 발견 후에만 구독하는 Telemetry 스트림 헬퍼. */
     private fun <T> telemetry(name: String, select: (System) -> Flow<T>): Flow<T> =
         system.flatMapLatest { sys -> if (sys == null) emptyFlow() else select(sys) }.safe(name)

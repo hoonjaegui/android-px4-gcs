@@ -44,6 +44,8 @@ class DefaultDroneRepository(
                 )
             },
             dataSource.headingDeg.toTelemetryUpdate { copy(heading = it) },
+            dataSource.armed.toTelemetryUpdate { copy(armed = it) },
+            dataSource.flightMode.toTelemetryUpdate { copy(flightMode = it.toDisplayName()) },
         )
             .scan(DroneState()) { state, update -> update(state) }
             .stateIn(scope, SharingStarted.Eagerly, DroneState())
@@ -51,6 +53,15 @@ class DefaultDroneRepository(
     /** 3D fix 이상이어야 위치로 쓸 수 있다. */
     private fun Telemetry.FixType.hasPositionFix(): Boolean =
         this >= Telemetry.FixType.FIX_3D
+
+    /** MAVSDK enum을 UI 표시용 문자열로. (UI가 MAVSDK 타입을 몰라도 되게) */
+    private fun Telemetry.FlightMode.toDisplayName(): String = when (this) {
+        Telemetry.FlightMode.POSCTL -> "POSITION"
+        Telemetry.FlightMode.ALTCTL -> "ALTITUDE"
+        Telemetry.FlightMode.RETURN_TO_LAUNCH -> "RETURN"
+        Telemetry.FlightMode.FOLLOW_ME -> "FOLLOW ME"
+        else -> name
+    }
 
     init {
         dataSource.start()
