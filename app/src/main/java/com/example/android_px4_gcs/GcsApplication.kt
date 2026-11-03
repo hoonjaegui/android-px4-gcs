@@ -14,6 +14,8 @@ class GcsApplication : Application() {
     private val appScope = CoroutineScope(SupervisorJob())
 
     val droneRepository: DroneRepository by lazy {
-        DefaultDroneRepository(MavsdkDroneDataSource(appScope), appScope)
+        // PX4 SITL의 Onboard/API 링크(remote port 14540). 값은 app/build.gradle.kts 참고.
+        val dataSource = MavsdkDroneDataSource(appScope, BuildConfig.MAVSDK_CONNECTION_URL)
+        DefaultDroneRepository(dataSource, appScope)
     }
 }

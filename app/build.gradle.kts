@@ -22,6 +22,12 @@ android {
 
         // mavsdk-server AAR ships ~37MB native binary per ABI; keep only what we run on
         // (arm64 emulator / device, x86_64 emulator).
+        // MAVSDK connection URL. Default: emulator (host UDP 14540 redirected into the guest).
+        // USB phone via tools/mavlink_udp_tcp_bridge.py: -Pgcs.connectionUrl=tcpout://127.0.0.1:5760
+        val connectionUrl = providers.gradleProperty("gcs.connectionUrl")
+            .getOrElse("udpin://0.0.0.0:14540")
+        buildConfigField("String", "MAVSDK_CONNECTION_URL", "\"$connectionUrl\"")
+
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")
         }
@@ -40,6 +46,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

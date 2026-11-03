@@ -30,7 +30,7 @@ import kotlinx.coroutines.reactive.asFlow
 @OptIn(ExperimentalCoroutinesApi::class)
 class MavsdkDroneDataSource(
     private val scope: CoroutineScope,
-    private val systemAddress: String = DEFAULT_SYSTEM_ADDRESS,
+    private val systemAddress: String,
 ) {
     private val server = MavsdkServer()
     private val _system = MutableStateFlow<System?>(null)
@@ -88,8 +88,5 @@ class MavsdkDroneDataSource(
     companion object {
         private const val TAG = "MavsdkDataSource"
         private const val GRPC_HOST = "127.0.0.1"
-
-        /** PX4 SITL의 Offboard/API 링크(remote port 14540)를 받는 UDP 서버. */
-        const val DEFAULT_SYSTEM_ADDRESS = "udpin://0.0.0.0:14540"
     }
 }
