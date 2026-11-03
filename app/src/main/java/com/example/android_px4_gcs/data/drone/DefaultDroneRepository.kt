@@ -2,6 +2,7 @@ package com.example.android_px4_gcs.data.drone
 
 import com.example.android_px4_gcs.core.model.DroneState
 import com.example.android_px4_gcs.domain.drone.DroneRepository
+import io.mavsdk.telemetry.Telemetry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -33,9 +34,15 @@ class DefaultDroneRepository(
         merge(
             dataSource.isConnected.map { connected -> Update { it.copy(connected = connected) } },
             dataSource.batteryPercent.toTelemetryUpdate { copy(batteryPercent = it.roundToInt()) },
+            dataSource.gpsInfo.toTelemetryUpdate { copy(gpsAvailable = it.fixType.hasPositionFix()) },
+            dataSource.position.toTelemetryUpdate { copy(latitude = it.latitudeDeg, longitude = it.longitudeDeg) },
         )
             .scan(DroneState()) { state, update -> update(state) }
             .stateIn(scope, SharingStarted.Eagerly, DroneState())
+
+    /** 3D fix 이상이어야 위치로 쓸 수 있다. */
+    private fun Telemetry.FixType.hasPositionFix(): Boolean =
+        this >= Telemetry.FixType.FIX_3D
 
     init {
         dataSource.start()

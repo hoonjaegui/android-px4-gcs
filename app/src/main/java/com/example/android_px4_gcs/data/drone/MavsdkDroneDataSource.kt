@@ -3,6 +3,7 @@ package com.example.android_px4_gcs.data.drone
 import android.util.Log
 import io.mavsdk.System
 import io.mavsdk.mavsdkserver.MavsdkServer
+import io.mavsdk.telemetry.Telemetry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -56,6 +57,14 @@ class MavsdkDroneDataSource(
     /** 배터리 잔량 (0~100%). */
     val batteryPercent: Flow<Float> =
         telemetry("battery") { it.telemetry.battery.asFlow().map { b -> b.remainingPercent } }
+
+    /** GPS 수신 상태 (fix type, 위성 수). */
+    val gpsInfo: Flow<Telemetry.GpsInfo> =
+        telemetry("gpsInfo") { it.telemetry.gpsInfo.asFlow() }
+
+    /** 추정 위치 (위도/경도/고도). PX4 EKF가 GPS 등을 융합한 결과. */
+    val position: Flow<Telemetry.Position> =
+        telemetry("position") { it.telemetry.position.asFlow() }
 
     /** system 발견 후에만 구독하는 Telemetry 스트림 헬퍼. */
     private fun <T> telemetry(name: String, select: (System) -> Flow<T>): Flow<T> =
