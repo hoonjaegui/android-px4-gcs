@@ -7,7 +7,7 @@ import org.junit.Test
 class LinkLossOutlookTest {
 
     private val lostAt = Timestamp(elapsedMs = 10_000L, epochMs = 0L)
-    private val lost = DroneState(connection = ConnectionStatus.LOST, connectionLostAt = lostAt)
+    private val lost = DroneState(connection = ConnectionStatus.LOST, connectionLostAt = lostAt, armed = true)
 
     @Test
     fun `no outlook while connected`() {
@@ -47,5 +47,11 @@ class LinkLossOutlookTest {
             s.withMessage(VehicleMessage(MessageSeverity.INFO, "m$i", Timestamp(i.toLong(), 0L)))
         }
         assertEquals(listOf("m7", "m6", "m5", "m4", "m3"), state.messages.map { it.text })
+    }
+
+    @Test
+    fun `no failsafe expected when vehicle was disarmed`() {
+        val state = lost.copy(armed = false, linkLossPolicy = LinkLossPolicy(LinkLossAction.RETURN, timeoutSec = 10))
+        assertEquals(LinkLossOutlook.Disarmed, LinkLossOutlook.of(state, nowElapsedMs = 25_000L))
     }
 }

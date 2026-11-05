@@ -159,4 +159,5 @@ python3 tools/mavlink_udp_tcp_bridge.py          # PX4 UDP 14540 <-> TCP 5760
   - QGC가 켜져 있으면 PX4는 GCS가 살아 있다고 보고 앱 링크를 끊어도 failsafe 안 함 → 실험 시 QGC 종료
   - 실기기: 앱 RETURN → PX4 `NAV_DLL_ACT : 2`, 앱 DISABLED → `0` 확인
   - `sitl_fault.sh`: px4 클라이언트가 간헐적으로 멈춤 → 5초 timeout + 3회 재시도
+  - 버그 수정: 땅에서 Disarm 상태로 끊겨도 "will enter RETURN" 카운트다운을 보여줬음. PX4 failsafe는 Armed일 때만 동작 → 끊기기 직전 Armed=FALSE면 `LinkLossOutlook.Disarmed`("no failsafe expected"). 실기기 확인
 - 명령 "수락"과 "목표 달성"(예: 착지 완료)의 연결은 하지 않기로 함 — PX4가 Flight Mode(HEARTBEAT)와 landed state로 이미 제공하므로 앱이 별도 상태를 만들 필요 없음

@@ -44,6 +44,9 @@ sealed interface LinkLossOutlook {
     /** NAV_DLL_ACT=0. 기체는 끊기기 전 모드를 계속 수행한다. */
     data object NoAction : LinkLossOutlook
 
+    /** 끊길 때 Disarm 상태였다. PX4 failsafe는 Armed일 때만 동작하므로 아무 일도 없을 것이다. */
+    data object Disarmed : LinkLossOutlook
+
     /** 아직 timeout 전. [remainingSec] 후 [action] 예정. */
     data class Pending(val action: LinkLossAction, val remainingSec: Long) : LinkLossOutlook
 
@@ -55,6 +58,8 @@ sealed interface LinkLossOutlook {
         fun of(state: DroneState, nowElapsedMs: Long): LinkLossOutlook? {
             val lostAt = state.connectionLostAt ?: return null
             if (state.connection != ConnectionStatus.LOST) return null
+            // armed는 끊기기 직전 마지막으로 알던 값이다 (끊긴 뒤에는 갱신되지 않는다).
+            if (!state.armed) return Disarmed
             val policy = state.linkLossPolicy ?: return Unknown
             if (policy.action == LinkLossAction.DISABLED) return NoAction
             // GCS의 LOST 판정(3초)과 PX4의 판정 시점은 정확히 같지 않다. 대략적인 예상치다.

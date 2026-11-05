@@ -230,6 +230,7 @@ private fun LinkLossSettingSection(
 private fun LinkLossOutlook.describe(): String = when (this) {
     LinkLossOutlook.Unknown -> "Vehicle link-loss action unknown (params not read)."
     LinkLossOutlook.NoAction -> "Vehicle has no link-loss action (NAV_DLL_ACT=0): it keeps its last mode."
+    LinkLossOutlook.Disarmed -> "Vehicle was disarmed when the link was lost — no failsafe expected."
     is LinkLossOutlook.Pending -> "Vehicle will enter ${action.name} in ~${remainingSec}s if the link stays down."
     is LinkLossOutlook.Triggered -> "Vehicle has likely entered ${action.name} (~${sinceSec}s ago). Unconfirmed until reconnected."
 }
