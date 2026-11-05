@@ -47,7 +47,7 @@ make px4_sitl
 시뮬레이터: Gazebo 대신 **SIH**(PX4 내장 물리 시뮬레이터) — `make px4_sitl sihsim_quadx`.
 
 검증된 환경: Apple Silicon(arm64), macOS 15.0, RAM 32GB / QGC 5.1.5 / PX4 v1.18.0-rc1 (Week 1은 v1.17.0) / Python 3.12.16 / cmake 4.4.4
-Android: Android Studio JBR 21 (`JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"`), AGP 9.2.1, Gradle 9.4.1, MAVSDK Java/mavsdk-server 4.1.0
+Android: Android Studio JBR 21 (`JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"`), AGP 9.2.1, Gradle 9.4.1, MAVSDK Java/mavsdk-server 4.1.0, Hilt 2.59.2 + KSP 2.3.4 (버전은 사용자 프로덕트 Grider_Rider 기준)
 
 ### Android 앱을 SITL에 붙이기
 
@@ -107,5 +107,6 @@ python3 tools/mavlink_udp_tcp_bridge.py          # PX4 UDP 14540 <-> TCP 5760
   - Battery `remainingPercent`는 MAVSDK 4.x에서 0~100. Altitude는 `relativeAltitudeM`(홈 기준), GPS는 fix ≥ 3D면 available
 - [x] 5. Compose Dashboard + 완료 조건 — QGC로 Takeoff → Go to → RTL → 착륙하는 동안 폰 앱에서 Flight Mode(HOLD→RETURN→HOLD), Armed, Altitude(0→2.7→29.8m→0), Heading(4°→93°→276°→3°), 위경도가 동시에 변함, 연결 끊김 없음 (2026-11-03)
   - 우연히 겪은 Failure: v1.17.0 센서 멈춤 중 앱이 GPS NO FIX / Flight Mode LAND(blind land failsafe)를 그대로 표시 → Week 4 소재
+- [x] 6. 수동 DI → Hilt 전환 — `GcsApplication`(`@HiltAndroidApp`), `di/DroneModule.kt`(`@ApplicationScope` CoroutineScope, `@MavsdkConnectionUrl`, `DroneRepository` `@Binds`), DataSource/Repository `@Singleton @Inject`, `@HiltViewModel` + `hiltViewModel()`. 실기기 + SITL에서 연결/텔레메트리, pxh `commander takeoff`로 Armed TRUE·Altitude 2.6m 갱신 확인 (2026-11-05)
 
 ### Week 3~4 — 미시작

@@ -10,6 +10,9 @@ kotlin = "2.2.10"
 composeBom = "2026.02.01"
 mavsdk = "4.1.0"
 coroutines = "1.10.2"
+hilt = "2.59.2"
+hiltNavigationCompose = "1.2.0"
+ksp = "2.3.4"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -32,8 +35,12 @@ androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lif
 mavsdk = { group = "io.mavsdk", name = "mavsdk", version.ref = "mavsdk" }
 mavsdk-server = { group = "io.mavsdk", name = "mavsdk-server", version.ref = "mavsdk" }
 kotlinx-coroutines-rx2 = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-rx2", version.ref = "coroutines" }
+hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
+hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }

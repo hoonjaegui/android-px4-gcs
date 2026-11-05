@@ -1,6 +1,8 @@
 package com.example.android_px4_gcs.data.drone
 
 import android.util.Log
+import com.example.android_px4_gcs.di.ApplicationScope
+import com.example.android_px4_gcs.di.MavsdkConnectionUrl
 import io.mavsdk.System
 import io.mavsdk.mavsdkserver.MavsdkServer
 import io.mavsdk.telemetry.Telemetry
@@ -18,6 +20,8 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.asFlow
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * MAVSDK를 직접 다루는 유일한 클래스.
@@ -28,9 +32,10 @@ import kotlinx.coroutines.reactive.asFlow
  *   PX4 SITL --MAVLink/UDP--> mavsdk_server --gRPC--> io.mavsdk.System --Rx--> Flow
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-class MavsdkDroneDataSource(
-    private val scope: CoroutineScope,
-    private val systemAddress: String,
+@Singleton
+class MavsdkDroneDataSource @Inject constructor(
+    @ApplicationScope private val scope: CoroutineScope,
+    @MavsdkConnectionUrl private val systemAddress: String,
 ) {
     private val server = MavsdkServer()
     private val _system = MutableStateFlow<System?>(null)

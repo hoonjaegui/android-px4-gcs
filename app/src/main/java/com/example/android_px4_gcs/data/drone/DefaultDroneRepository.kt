@@ -1,6 +1,7 @@
 package com.example.android_px4_gcs.data.drone
 
 import com.example.android_px4_gcs.core.model.DroneState
+import com.example.android_px4_gcs.di.ApplicationScope
 import com.example.android_px4_gcs.domain.drone.DroneRepository
 import io.mavsdk.telemetry.Telemetry
 import kotlinx.coroutines.CoroutineScope
@@ -11,6 +12,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.math.roundToInt
 
 /**
@@ -19,9 +22,10 @@ import kotlin.math.roundToInt
  * 각 스트림은 서로 다른 주기로 들어오므로, 스트림마다 "DroneState를 어떻게 갱신할지"(Update)로
  * 변환한 뒤 merge → scan으로 누적한다. 스트림이 늘어도 이 구조는 그대로다.
  */
-class DefaultDroneRepository(
+@Singleton
+class DefaultDroneRepository @Inject constructor(
     private val dataSource: MavsdkDroneDataSource,
-    scope: CoroutineScope,
+    @ApplicationScope scope: CoroutineScope,
 ) : DroneRepository {
 
     private fun interface Update : (DroneState) -> DroneState
