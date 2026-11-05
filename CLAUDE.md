@@ -109,4 +109,10 @@ python3 tools/mavlink_udp_tcp_bridge.py          # PX4 UDP 14540 <-> TCP 5760
   - 우연히 겪은 Failure: v1.17.0 센서 멈춤 중 앱이 GPS NO FIX / Flight Mode LAND(blind land failsafe)를 그대로 표시 → Week 4 소재
 - [x] 6. 수동 DI → Hilt 전환 — `GcsApplication`(`@HiltAndroidApp`), `di/DroneModule.kt`(`@ApplicationScope` CoroutineScope, `@MavsdkConnectionUrl`, `DroneRepository` `@Binds`), DataSource/Repository `@Singleton @Inject`, `@HiltViewModel` + `hiltViewModel()`. 실기기 + SITL에서 연결/텔레메트리, pxh `commander takeoff`로 Armed TRUE·Altitude 2.6m 갱신 확인 (2026-11-05)
 
-### Week 3~4 — 미시작
+### Week 3 — Android에서 Drone Command (브랜치 `Week3`, Week2를 main에 ff 머지 후 분기)
+
+- [x] 1. ARM — `DroneCommand`/`CommandResult`/`CommandState`(core/model), `MavsdkDroneDataSource.arm()`(`action.arm().await()`), `DefaultDroneRepository.runCommand`가 `ActionException(code, description)` → `CommandResult.Failure`로 변환(MAVSDK 타입 차단), `DashboardViewModel.onCommand`가 명령별 Idle→Running→Success/Failed 관리(Running 중 중복 전송 차단) (2026-11-05)
+  - 실기기: ARM 탭 → `arm accepted` / PX4 `Armed by external command` / 화면 ACCEPTED + Armed TRUE → 약 10초 후 `Disarmed by auto preflight disarming`으로 Armed FALSE, 명령 상태는 ACCEPTED 그대로
+  - 핵심: Command 결과(ACK 수락)와 기체 상태(Telemetry)는 별개. 상태 판단은 항상 Telemetry로
+
+### Week 4 — 미시작

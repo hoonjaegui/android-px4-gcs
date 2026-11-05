@@ -1,9 +1,13 @@
 package com.example.android_px4_gcs.data.drone
 
+import android.util.Log
+import com.example.android_px4_gcs.core.model.CommandResult
 import com.example.android_px4_gcs.core.model.DroneState
 import com.example.android_px4_gcs.di.ApplicationScope
 import com.example.android_px4_gcs.domain.drone.DroneRepository
+import io.mavsdk.action.Action
 import io.mavsdk.telemetry.Telemetry
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -54,6 +58,27 @@ class DefaultDroneRepository @Inject constructor(
             .scan(DroneState()) { state, update -> update(state) }
             .stateIn(scope, SharingStarted.Eagerly, DroneState())
 
+    override suspend fun arm(): CommandResult = runCommand("arm") { dataSource.arm() }
+
+    /** MAVSDK 예외를 도메인 결과로 변환. ViewModel은 MAVSDK 타입을 모른다. */
+    private suspend fun runCommand(name: String, block: suspend () -> Unit): CommandResult =
+        try {
+            block()
+            Log.i(TAG, "$name accepted")
+            CommandResult.Success
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Action.ActionException) {
+            // PX4가 COMMAND_ACK로 거부했거나(COMMAND_DENIED 등) 응답이 없음(TIMEOUT)
+            Log.w(TAG, "$name rejected: ${e.code} ${e.description}")
+            CommandResult.Failure("${e.code}: ${e.description}")
+        } catch (e: MavsdkDroneDataSource.VehicleNotDiscoveredException) {
+            CommandResult.Failure("NOT CONNECTED")
+        } catch (e: Exception) {
+            Log.w(TAG, "$name failed", e)
+            CommandResult.Failure(e.message ?: e.javaClass.simpleName)
+        }
+
     /** 3D fix 이상이어야 위치로 쓸 수 있다. */
     private fun Telemetry.FixType.hasPositionFix(): Boolean =
         this >= Telemetry.FixType.FIX_3D
@@ -69,5 +94,9 @@ class DefaultDroneRepository @Inject constructor(
 
     init {
         dataSource.start()
+    }
+
+    private companion object {
+        const val TAG = "DroneRepository"
     }
 }

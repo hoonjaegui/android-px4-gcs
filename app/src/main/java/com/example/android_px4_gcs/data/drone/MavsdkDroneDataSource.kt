@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.asFlow
+import kotlinx.coroutines.rx2.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -82,6 +83,17 @@ class MavsdkDroneDataSource @Inject constructor(
     /** 비행 모드 (HEARTBEAT.custom_mode를 MAVSDK가 해석한 값). */
     val flightMode: Flow<Telemetry.FlightMode> =
         telemetry("flightMode") { it.telemetry.flightMode.asFlow() }
+
+    /**
+     * ARM 명령 (MAV_CMD_COMPONENT_ARM_DISARM). PX4의 COMMAND_ACK를 받을 때까지 suspend.
+     * 거부되면 [io.mavsdk.action.Action.ActionException]을 던진다.
+     */
+    suspend fun arm() = requireSystem().action.arm().await()
+
+    private fun requireSystem(): System =
+        system.value ?: throw VehicleNotDiscoveredException()
+
+    class VehicleNotDiscoveredException : IllegalStateException("vehicle not discovered yet")
 
     /** system 발견 후에만 구독하는 Telemetry 스트림 헬퍼. */
     private fun <T> telemetry(name: String, select: (System) -> Flow<T>): Flow<T> =
