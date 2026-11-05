@@ -119,4 +119,19 @@ python3 tools/mavlink_udp_tcp_bridge.py          # PX4 UDP 14540 <-> TCP 5760
   - RTL(2.5m 호버링 중) → Flight Mode RETURN → `RTL: start return at 492 m (3 m above destination)` → `land at destination` → `Disarmed by landing`
   - 완료 조건: ARM → TAKEOFF(HOLD, 2.4m) → LAND(Flight Mode LAND, 1.6m) → `Disarmed by landing`(HOLD, Armed FALSE, 0.2m). 네 명령 모두 앱 버튼으로, 상태 변화는 앱 Telemetry로 확인
 
-### Week 4 — 미시작
+### Week 4 — GCS Failure Handling (브랜치 `Week4`, Week3를 main에 ff 머지 후 분기)
+
+- [x] 공통 설계 (2026-11-05)
+  - `DroneState.connection: ConnectionStatus`(SEARCHING / CONNECTED / LOST — 처음 못 찾은 것과 끊긴 것을 구분), `gpsAvailable: Boolean?`(null=모름), `receivedAt: Map<TelemetryField, Long>`(필드별 수신 시각, `SystemClock.elapsedRealtime` monotonic)
+  - `DroneWarningPolicy.evaluate(state, nowMs)` 순수 함수 → `DroneWarningState`. 기준: stale 3초(HEARTBEAT timeout과 동일), low battery < 20%. JVM 단위 테스트 7개 (`DroneWarningPolicyTest`)
+  - ViewModel이 500ms 시계 Flow를 `combine` — "안 오는 것"은 이벤트가 없어서 시계 없이는 감지 불가
+  - UI: 경고 배너, stale 값은 회색 + `Last update Ns ago`, LOST 시 HEARTBEAT 값(Armed/Mode)은 `Last known value`, 미연결 시 명령 버튼 비활성
+  - `CommandFailureReason`(NOT_CONNECTED / REJECTED / BUSY / TIMEOUT / UNKNOWN)으로 MAVSDK `ActionResult` 분류, 사유별 운용자 안내 문구
+- [x] 1. Connection Loss — `kill -STOP <px4 pid>` → 약 2초 후 CONNECTION LOST 배너, 값 전부 회색 + 경과 시간, 버튼 비활성 → `kill -CONT` → 자동 복구
+- [x] 2. Telemetry Stale — pxh `mavlink stream -u 14580 -s GLOBAL_POSITION_INT -r 0` (앱 쪽 Onboard 링크만) → **CONNECTED인데** TELEMETRY LOST, Altitude/Heading/위경도만 `Last update 6s ago`. 복구: `-r 50`
+- [x] 3. GPS Lost — `param set SYS_FAILURE_EN 1` → `failure gps off` → GPS SIGNAL LOST / NO FIX. 위경도는 stale 아님(EKF 추정치가 계속 옴) → "No GPS fix — estimated / last known position" 표시. 복구: `failure gps ok`
+- [x] 4. Low Battery — `param set SIM_BAT_MIN_PCT 10`, `SIM_BAT_DRAIN 20` → 이륙 → 10%에서 LOW BATTERY 배너 + 빨간 값. PX4도 `Low battery` 경고. 테스트 후 50 / 60 / `SYS_FAILURE_EN 0`으로 원복
+- [x] 5. Command Failure
+  - REJECTED: GPS failure 상태에서 ARM → PX4 `Arming denied: Resolve system health failures first` → 앱 REJECTED / COMMAND_DENIED, Armed FALSE 유지
+  - TIMEOUT: PX4 SIGSTOP 직후 ARM → 앱 NO RESPONSE(TIMEOUT) → SIGCONT 하자 PX4 `Armed by external command`, 앱 Armed TRUE. **Timeout ≠ 미실행** (소켓에 쌓인 명령이 뒤늦게 실행됨)
+- 남은 한계: 거부 사유의 실제 원인(PX4 STATUSTEXT "Resolve system health failures first")은 앱에 안 보이고 `Command Denied`만 보임. 명령 "수락"과 "목표 달성"(예: 착지 완료)도 아직 연결 안 됨

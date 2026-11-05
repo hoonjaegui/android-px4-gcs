@@ -1,34 +1,65 @@
 package com.example.android_px4_gcs.feature.dashboard
 
+import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.android_px4_gcs.core.model.CommandResult
 import com.example.android_px4_gcs.core.model.CommandState
 import com.example.android_px4_gcs.core.model.DroneCommand
 import com.example.android_px4_gcs.core.model.DroneState
+import com.example.android_px4_gcs.core.model.DroneWarningPolicy
+import com.example.android_px4_gcs.core.model.DroneWarningState
 import com.example.android_px4_gcs.domain.drone.DroneRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+data class DashboardUiState(
+    val drone: DroneState = DroneState(),
+    val warnings: DroneWarningState = DroneWarningState(),
+    val commandStates: Map<DroneCommand, CommandState> = emptyMap(),
+    /** "N초 전" 계산용 현재 시각 (elapsedRealtime ms). */
+    val nowMs: Long = 0L,
+)
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val repository: DroneRepository,
 ) : ViewModel() {
-    /** 기체가 "지금 어떤 상태인가" (Telemetry). */
-    val droneState: StateFlow<DroneState> = repository.droneState
 
-    private val _commandStates = MutableStateFlow<Map<DroneCommand, CommandState>>(emptyMap())
+    private val commandStates = MutableStateFlow<Map<DroneCommand, CommandState>>(emptyMap())
 
-    /** 내가 보낸 명령이 "어떻게 처리됐는가" (명령별). 없으면 Idle. */
-    val commandStates: StateFlow<Map<DroneCommand, CommandState>> = _commandStates.asStateFlow()
+    /**
+     * Telemetry가 "안 오는 것"은 이벤트가 발생하지 않으므로 Flow만으로는 감지할 수 없다.
+     * 시계를 따로 흘려서 "마지막 수신 후 얼마나 지났나"를 주기적으로 다시 계산한다.
+     */
+    private val clock = flow {
+        while (true) {
+            emit(SystemClock.elapsedRealtime())
+            delay(CLOCK_TICK_MS)
+        }
+    }
+
+    val uiState: StateFlow<DashboardUiState> =
+        combine(repository.droneState, commandStates, clock) { drone, commands, now ->
+            DashboardUiState(
+                drone = drone,
+                warnings = DroneWarningPolicy.evaluate(drone, now),
+                commandStates = commands,
+                nowMs = now,
+            )
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardUiState())
 
     fun onCommand(command: DroneCommand) {
-        if (_commandStates.value[command] == CommandState.Running) return // 중복 전송 방지
+        if (commandStates.value[command] == CommandState.Running) return // 중복 전송 방지
         setState(command, CommandState.Running)
         viewModelScope.launch {
             val result = when (command) {
@@ -41,12 +72,16 @@ class DashboardViewModel @Inject constructor(
                 command,
                 when (result) {
                     CommandResult.Success -> CommandState.Success
-                    is CommandResult.Failure -> CommandState.Failed(result.reason)
+                    is CommandResult.Failure -> CommandState.Failed(result.reason, result.detail)
                 },
             )
         }
     }
 
     private fun setState(command: DroneCommand, state: CommandState) =
-        _commandStates.update { it + (command to state) }
+        commandStates.update { it + (command to state) }
+
+    private companion object {
+        const val CLOCK_TICK_MS = 500L
+    }
 }

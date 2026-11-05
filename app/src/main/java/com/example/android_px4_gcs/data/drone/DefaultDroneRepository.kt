@@ -1,12 +1,19 @@
 package com.example.android_px4_gcs.data.drone
 
+import android.os.SystemClock
 import android.util.Log
+import com.example.android_px4_gcs.core.model.CommandFailureReason
 import com.example.android_px4_gcs.core.model.CommandResult
+import com.example.android_px4_gcs.core.model.ConnectionStatus
 import com.example.android_px4_gcs.core.model.DroneState
+import com.example.android_px4_gcs.core.model.TelemetryField
 import com.example.android_px4_gcs.di.ApplicationScope
 import com.example.android_px4_gcs.domain.drone.DroneRepository
 import io.mavsdk.action.Action
 import io.mavsdk.telemetry.Telemetry
+import javax.inject.Inject
+import javax.inject.Singleton
+import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -16,9 +23,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.stateIn
-import javax.inject.Inject
-import javax.inject.Singleton
-import kotlin.math.roundToInt
 
 /**
  * MAVSDK Telemetry 스트림들을 도메인 모델 DroneState 하나로 합친다.
@@ -34,16 +38,24 @@ class DefaultDroneRepository @Inject constructor(
 
     private fun interface Update : (DroneState) -> DroneState
 
-    /** Telemetry 값 갱신 + 수신 시각 기록. */
-    private fun <T> Flow<T>.toTelemetryUpdate(apply: DroneState.(T) -> DroneState): Flow<Update> =
-        map { value -> Update { it.apply(value).copy(lastTelemetryTime = System.currentTimeMillis()) } }
+    /** Telemetry 값 갱신 + 해당 필드의 수신 시각 기록. */
+    private fun <T> Flow<T>.toTelemetryUpdate(
+        field: TelemetryField,
+        apply: DroneState.(T) -> DroneState,
+    ): Flow<Update> = map { value ->
+        Update { it.apply(value).copy(receivedAt = it.receivedAt + (field to SystemClock.elapsedRealtime())) }
+    }
+
+    /** HEARTBEAT 기반 값(armed, flight mode). 신선도는 connection이 대표하므로 시각은 기록하지 않는다. */
+    private fun <T> Flow<T>.toHeartbeatUpdate(apply: DroneState.(T) -> DroneState): Flow<Update> =
+        map { value -> Update { it.apply(value) } }
 
     override val droneState: StateFlow<DroneState> =
         merge(
-            dataSource.isConnected.map { connected -> Update { it.copy(connected = connected) } },
-            dataSource.batteryPercent.toTelemetryUpdate { copy(batteryPercent = it.roundToInt()) },
-            dataSource.gpsInfo.toTelemetryUpdate { copy(gpsAvailable = it.fixType.hasPositionFix()) },
-            dataSource.position.toTelemetryUpdate {
+            dataSource.isConnected.map { connected -> Update { it.copy(connection = it.connection.next(connected)) } },
+            dataSource.batteryPercent.toTelemetryUpdate(TelemetryField.BATTERY) { copy(batteryPercent = it.roundToInt()) },
+            dataSource.gpsInfo.toTelemetryUpdate(TelemetryField.GPS) { copy(gpsAvailable = it.fixType.hasPositionFix()) },
+            dataSource.position.toTelemetryUpdate(TelemetryField.POSITION) {
                 copy(
                     latitude = it.latitudeDeg,
                     longitude = it.longitudeDeg,
@@ -51,12 +63,19 @@ class DefaultDroneRepository @Inject constructor(
                     altitude = it.relativeAltitudeM.toDouble(),
                 )
             },
-            dataSource.headingDeg.toTelemetryUpdate { copy(heading = it) },
-            dataSource.armed.toTelemetryUpdate { copy(armed = it) },
-            dataSource.flightMode.toTelemetryUpdate { copy(flightMode = it.toDisplayName()) },
+            dataSource.headingDeg.toTelemetryUpdate(TelemetryField.HEADING) { copy(heading = it) },
+            dataSource.armed.toHeartbeatUpdate { copy(armed = it) },
+            dataSource.flightMode.toHeartbeatUpdate { copy(flightMode = it.toDisplayName()) },
         )
             .scan(DroneState()) { state, update -> update(state) }
             .stateIn(scope, SharingStarted.Eagerly, DroneState())
+
+    /** 한 번이라도 연결된 뒤 끊기면 LOST. 처음부터 못 찾은 건 SEARCHING으로 남는다. */
+    private fun ConnectionStatus.next(connected: Boolean): ConnectionStatus = when {
+        connected -> ConnectionStatus.CONNECTED
+        this == ConnectionStatus.SEARCHING -> ConnectionStatus.SEARCHING
+        else -> ConnectionStatus.LOST
+    }
 
     override suspend fun arm(): CommandResult = runCommand("arm") { dataSource.arm() }
 
@@ -75,15 +94,27 @@ class DefaultDroneRepository @Inject constructor(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Action.ActionException) {
-            // PX4가 COMMAND_ACK로 거부했거나(COMMAND_DENIED 등) 응답이 없음(TIMEOUT)
-            Log.w(TAG, "$name rejected: ${e.code} ${e.description}")
-            CommandResult.Failure("${e.code}: ${e.description}")
+            Log.w(TAG, "$name failed: ${e.code} ${e.description}")
+            CommandResult.Failure(e.code.toFailureReason(), "${e.code}: ${e.description}")
         } catch (e: MavsdkDroneDataSource.VehicleNotDiscoveredException) {
-            CommandResult.Failure("NOT CONNECTED")
+            CommandResult.Failure(CommandFailureReason.NOT_CONNECTED, "vehicle not discovered")
         } catch (e: Exception) {
             Log.w(TAG, "$name failed", e)
-            CommandResult.Failure(e.message ?: e.javaClass.simpleName)
+            CommandResult.Failure(CommandFailureReason.UNKNOWN, e.message ?: e.javaClass.simpleName)
         }
+
+    private fun Action.ActionResult.Result.toFailureReason(): CommandFailureReason = when (this) {
+        Action.ActionResult.Result.NO_SYSTEM,
+        Action.ActionResult.Result.CONNECTION_ERROR -> CommandFailureReason.NOT_CONNECTED
+        Action.ActionResult.Result.COMMAND_DENIED,
+        Action.ActionResult.Result.COMMAND_DENIED_LANDED_STATE_UNKNOWN,
+        Action.ActionResult.Result.COMMAND_DENIED_NOT_LANDED,
+        Action.ActionResult.Result.UNSUPPORTED,
+        Action.ActionResult.Result.FAILED -> CommandFailureReason.REJECTED
+        Action.ActionResult.Result.BUSY -> CommandFailureReason.BUSY
+        Action.ActionResult.Result.TIMEOUT -> CommandFailureReason.TIMEOUT
+        else -> CommandFailureReason.UNKNOWN
+    }
 
     /** 3D fix 이상이어야 위치로 쓸 수 있다. */
     private fun Telemetry.FixType.hasPositionFix(): Boolean =
