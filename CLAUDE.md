@@ -134,4 +134,12 @@ python3 tools/mavlink_udp_tcp_bridge.py          # PX4 UDP 14540 <-> TCP 5760
 - [x] 5. Command Failure
   - REJECTED: GPS failure 상태에서 ARM → PX4 `Arming denied: Resolve system health failures first` → 앱 REJECTED / COMMAND_DENIED, Armed FALSE 유지
   - TIMEOUT: PX4 SIGSTOP 직후 ARM → 앱 NO RESPONSE(TIMEOUT) → SIGCONT 하자 PX4 `Armed by external command`, 앱 Armed TRUE. **Timeout ≠ 미실행** (소켓에 쌓인 명령이 뒤늦게 실행됨)
+- [x] 6. 위치 신뢰성 + 시각 표시 개선 (2026-11-05)
+  - GPS fix 없음 또는 `health.isGlobalPositionOk == false`면 들어오는 위경도를 **버리고** 마지막 GPS 위치 유지(`DroneState.withPosition`). 고도는 기압계 기반이라 계속 갱신. `TelemetryField`를 POSITION(위경도)/ALTITUDE로 분리. EKF만 불신하면 POSITION UNRELIABLE 배너
+  - 수신 시각을 `Timestamp(elapsedMs, epochMs)` 두 시계로 저장 → `Last update 17:36:45 (10s ago)`. 연결 끊기면 Armed/Mode에 `Last known value — link lost 17:38:20 (22s ago)`
+  - 실기기: `failure gps off` 후 10초 지나도 위경도 17:36:45 값 고정, 고도/heading은 계속 갱신. 단위 테스트 10개
+- [x] 7. 통신 두절 failsafe 재현 — PX4는 그대로 두고 **브리지만 kill** (현장과 같은 상황: 기체는 계속 비행, 링크만 끊김). PX4가 MAVSDK를 GCS로 인식(`Connection to ground station lost` / `GCS connection regained`). 브리지 재시작 시 앱 자동 재연결
+  - `NAV_DLL_ACT=0`(**PX4 기본값**, `COM_DL_LOSS_T=10`): 18초 지나도 failsafe 없음, HOLD로 계속 호버링
+  - `NAV_DLL_ACT=2`(RTL): `Failsafe activated: entering Hold for 5 seconds` → `RTL: start return` → 착지·Disarm. 끊긴 동안 앱은 HOLD/Armed TRUE(last known)를 보여줬지만 재연결하니 실제는 착륙·Disarm 완료 → 끊긴 동안 기체 상태는 GCS가 알 수 없음
+  - 테스트 후 `NAV_DLL_ACT 0`, `SYS_FAILURE_EN 0` 원복
 - 남은 한계: 거부 사유의 실제 원인(PX4 STATUSTEXT "Resolve system health failures first")은 앱에 안 보이고 `Command Denied`만 보임. 명령 "수락"과 "목표 달성"(예: 착지 완료)도 아직 연결 안 됨

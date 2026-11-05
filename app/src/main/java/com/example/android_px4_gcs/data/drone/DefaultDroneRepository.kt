@@ -7,6 +7,7 @@ import com.example.android_px4_gcs.core.model.CommandResult
 import com.example.android_px4_gcs.core.model.ConnectionStatus
 import com.example.android_px4_gcs.core.model.DroneState
 import com.example.android_px4_gcs.core.model.TelemetryField
+import com.example.android_px4_gcs.core.model.Timestamp
 import com.example.android_px4_gcs.di.ApplicationScope
 import com.example.android_px4_gcs.domain.drone.DroneRepository
 import io.mavsdk.action.Action
@@ -43,38 +44,37 @@ class DefaultDroneRepository @Inject constructor(
         field: TelemetryField,
         apply: DroneState.(T) -> DroneState,
     ): Flow<Update> = map { value ->
-        Update { it.apply(value).copy(receivedAt = it.receivedAt + (field to SystemClock.elapsedRealtime())) }
+        Update { it.apply(value).copy(receivedAt = it.receivedAt + (field to now())) }
     }
 
-    /** HEARTBEAT 기반 값(armed, flight mode). 신선도는 connection이 대표하므로 시각은 기록하지 않는다. */
-    private fun <T> Flow<T>.toHeartbeatUpdate(apply: DroneState.(T) -> DroneState): Flow<Update> =
+    /** 상태 값(armed, flight mode, health). 신선도는 connection이 대표하므로 시각은 기록하지 않는다. */
+    private fun <T> Flow<T>.toStateUpdate(apply: DroneState.(T) -> DroneState): Flow<Update> =
         map { value -> Update { it.apply(value) } }
+
+    private fun now() = Timestamp(elapsedMs = SystemClock.elapsedRealtime(), epochMs = System.currentTimeMillis())
 
     override val droneState: StateFlow<DroneState> =
         merge(
-            dataSource.isConnected.map { connected -> Update { it.copy(connection = it.connection.next(connected)) } },
+            dataSource.isConnected.map { connected -> Update { it.withConnection(connected) } },
             dataSource.batteryPercent.toTelemetryUpdate(TelemetryField.BATTERY) { copy(batteryPercent = it.roundToInt()) },
             dataSource.gpsInfo.toTelemetryUpdate(TelemetryField.GPS) { copy(gpsAvailable = it.fixType.hasPositionFix()) },
-            dataSource.position.toTelemetryUpdate(TelemetryField.POSITION) {
-                copy(
-                    latitude = it.latitudeDeg,
-                    longitude = it.longitudeDeg,
-                    // 홈(이륙 지점) 기준 고도. absoluteAltitudeM은 해발(AMSL) 고도.
-                    altitude = it.relativeAltitudeM.toDouble(),
-                )
+            dataSource.position.map { p ->
+                // 고도는 홈(이륙 지점) 기준. absoluteAltitudeM은 해발(AMSL) 고도.
+                Update { it.withPosition(p.latitudeDeg, p.longitudeDeg, p.relativeAltitudeM.toDouble(), now()) }
             },
+            dataSource.globalPositionOk.toStateUpdate { copy(globalPositionOk = it) },
             dataSource.headingDeg.toTelemetryUpdate(TelemetryField.HEADING) { copy(heading = it) },
-            dataSource.armed.toHeartbeatUpdate { copy(armed = it) },
-            dataSource.flightMode.toHeartbeatUpdate { copy(flightMode = it.toDisplayName()) },
+            dataSource.armed.toStateUpdate { copy(armed = it) },
+            dataSource.flightMode.toStateUpdate { copy(flightMode = it.toDisplayName()) },
         )
             .scan(DroneState()) { state, update -> update(state) }
             .stateIn(scope, SharingStarted.Eagerly, DroneState())
 
-    /** 한 번이라도 연결된 뒤 끊기면 LOST. 처음부터 못 찾은 건 SEARCHING으로 남는다. */
-    private fun ConnectionStatus.next(connected: Boolean): ConnectionStatus = when {
-        connected -> ConnectionStatus.CONNECTED
-        this == ConnectionStatus.SEARCHING -> ConnectionStatus.SEARCHING
-        else -> ConnectionStatus.LOST
+    /** 한 번이라도 연결된 뒤 끊기면 LOST(+끊긴 시각). 처음부터 못 찾은 건 SEARCHING으로 남는다. */
+    private fun DroneState.withConnection(connected: Boolean): DroneState = when {
+        connected -> copy(connection = ConnectionStatus.CONNECTED, connectionLostAt = null)
+        connection == ConnectionStatus.CONNECTED -> copy(connection = ConnectionStatus.LOST, connectionLostAt = now())
+        else -> this // SEARCHING은 SEARCHING, LOST는 처음 끊긴 시각 유지
     }
 
     override suspend fun arm(): CommandResult = runCommand("arm") { dataSource.arm() }

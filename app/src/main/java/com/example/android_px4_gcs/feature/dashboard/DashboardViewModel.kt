@@ -26,8 +26,8 @@ data class DashboardUiState(
     val drone: DroneState = DroneState(),
     val warnings: DroneWarningState = DroneWarningState(),
     val commandStates: Map<DroneCommand, CommandState> = emptyMap(),
-    /** "N초 전" 계산용 현재 시각 (elapsedRealtime ms). */
-    val nowMs: Long = 0L,
+    /** "N초 전" 계산용 현재 시각 (SystemClock.elapsedRealtime ms). */
+    val nowElapsedMs: Long = 0L,
 )
 
 @HiltViewModel
@@ -54,7 +54,7 @@ class DashboardViewModel @Inject constructor(
                 drone = drone,
                 warnings = DroneWarningPolicy.evaluate(drone, now),
                 commandStates = commands,
-                nowMs = now,
+                nowElapsedMs = now,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardUiState())
 

@@ -72,6 +72,10 @@ class MavsdkDroneDataSource @Inject constructor(
     val position: Flow<Telemetry.Position> =
         telemetry("position") { it.telemetry.position.asFlow() }
 
+    /** EKF가 위경도 추정을 신뢰하는가 (SYS_STATUS/ESTIMATOR 상태 기반). */
+    val globalPositionOk: Flow<Boolean> =
+        telemetry("health") { it.telemetry.health.asFlow().map { h -> h.isGlobalPositionOk } }
+
     /** 기수 방향 (0~360°, 북=0, 시계방향). */
     val headingDeg: Flow<Double> =
         telemetry("heading") { it.telemetry.heading.asFlow().map { h -> h.headingDeg } }

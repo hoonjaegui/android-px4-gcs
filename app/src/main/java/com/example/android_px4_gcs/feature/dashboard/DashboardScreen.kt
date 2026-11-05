@@ -33,6 +33,10 @@ import com.example.android_px4_gcs.core.model.DroneCommand
 import com.example.android_px4_gcs.core.model.DroneState
 import com.example.android_px4_gcs.core.model.DroneWarningState
 import com.example.android_px4_gcs.core.model.TelemetryField
+import com.example.android_px4_gcs.core.model.Timestamp
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 private val Danger = Color(0xFFC62828)
 private val Warning = Color(0xFFE65100)
@@ -56,11 +60,23 @@ fun DashboardScreen(
 ) {
     val state = uiState.drone
     val warnings = uiState.warnings
-    // 연결이 끊기면 HEARTBEAT 기반 값(armed, flight mode)도 "마지막으로 알던 값"일 뿐이다.
-    val heartbeatStale = state.connection == ConnectionStatus.LOST
+    /** "16:24:05 (8s ago)". 절대 시각은 기록/대조용, 경과 시간은 한눈에 판단용. */
+    fun Timestamp.describe(): String =
+        "${TIME_FORMAT.format(Date(epochMs))} (${(uiState.nowElapsedMs - elapsedMs) / 1000}s ago)"
 
-    fun age(field: TelemetryField): Long? =
-        if (field in warnings.staleFields) state.receivedAt[field]?.let { (uiState.nowMs - it) / 1000 } else null
+    /** 오래된 필드면 "Last update ..." 문구, 신선하면 null. */
+    fun lastUpdate(field: TelemetryField): String? =
+        if (field in warnings.staleFields) state.receivedAt[field]?.let { "Last update ${it.describe()}" } else null
+
+    // 연결이 끊기면 HEARTBEAT 기반 값(armed, flight mode)도 "마지막으로 알던 값"일 뿐이다.
+    val heartbeatNote = state.connectionLostAt?.let { "Last known value — link lost ${it.describe()}" }
+
+    // GPS/EKF가 불량이면 위경도는 갱신을 멈춘 "마지막 GPS 위치"다. 3초 기준과 무관하게 바로 과거 값으로 표시한다.
+    val positionNote = when {
+        state.latitude == null -> null
+        !state.positionTrusted -> state.receivedAt[TelemetryField.POSITION]?.let { "Last GPS position ${it.describe()}" }
+        else -> lastUpdate(TelemetryField.POSITION)
+    }
 
     Column(
         modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
@@ -82,18 +98,18 @@ fun DashboardScreen(
                 ConnectionStatus.LOST -> Danger
             },
         )
-        TelemetryItem("Flight Mode", state.flightMode ?: NO_DATA, stale = heartbeatStale)
+        TelemetryItem("Flight Mode", state.flightMode ?: NO_DATA, staleNote = heartbeatNote)
         TelemetryItem(
             label = "Armed",
             value = if (state.armed) "TRUE" else "FALSE",
             valueColor = if (state.armed) Warning else Color.Unspecified,
-            stale = heartbeatStale,
+            staleNote = heartbeatNote,
         )
         TelemetryItem(
             label = "Battery",
             value = state.batteryPercent?.let { "$it%" } ?: NO_DATA,
             valueColor = if (warnings.lowBattery) Danger else Color.Unspecified,
-            ageSec = age(TelemetryField.BATTERY),
+            staleNote = lastUpdate(TelemetryField.BATTERY),
         )
         TelemetryItem(
             label = "GPS",
@@ -103,10 +119,10 @@ fun DashboardScreen(
                 false -> "NO FIX"
             },
             valueColor = if (warnings.gpsUnavailable) Danger else Color.Unspecified,
-            ageSec = age(TelemetryField.GPS),
+            staleNote = lastUpdate(TelemetryField.GPS),
         )
-        TelemetryItem("Altitude", state.altitude?.let { "%.1fm".format(it) } ?: NO_DATA, ageSec = age(TelemetryField.POSITION))
-        TelemetryItem("Heading", state.heading?.let { "%.0f°".format(it) } ?: NO_DATA, ageSec = age(TelemetryField.HEADING))
+        TelemetryItem("Altitude", state.altitude?.let { "%.1fm".format(it) } ?: NO_DATA, staleNote = lastUpdate(TelemetryField.ALTITUDE))
+        TelemetryItem("Heading", state.heading?.let { "%.0f°".format(it) } ?: NO_DATA, staleNote = lastUpdate(TelemetryField.HEADING))
         TelemetryItem(
             label = "Latitude / Longitude",
             value = if (state.latitude != null && state.longitude != null) {
@@ -114,9 +130,9 @@ fun DashboardScreen(
             } else {
                 NO_DATA
             },
-            ageSec = age(TelemetryField.POSITION),
-            // GPS가 없으면 PX4 EKF가 GPS 없이 추정한 위치다. 신뢰할 수 없다.
-            note = if (warnings.gpsUnavailable && state.latitude != null) "No GPS fix — estimated / last known position" else null,
+            staleNote = positionNote,
+            // GPS가 끊긴 뒤 PX4가 보내는 추정 위경도(dead reckoning)는 쓰지 않는다.
+            note = if (!state.positionTrusted && state.latitude != null) "Not updating — PX4 estimate ignored until GPS returns" else null,
         )
 
         HorizontalDivider()
@@ -138,6 +154,7 @@ private fun WarningBanners(warnings: DroneWarningState) {
         if (warnings.connectionLost) add("CONNECTION LOST")
         if (warnings.telemetryStale) add("TELEMETRY LOST")
         if (warnings.gpsUnavailable) add("GPS SIGNAL LOST")
+        if (warnings.positionUnreliable) add("POSITION UNRELIABLE")
         if (warnings.lowBattery) add("LOW BATTERY")
     }
     messages.forEach { message ->
@@ -155,26 +172,22 @@ private fun WarningBanners(warnings: DroneWarningState) {
 }
 
 private const val NO_DATA = "--"
+private val TIME_FORMAT = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
 
 @Composable
 private fun TelemetryItem(
     label: String,
     value: String,
     valueColor: Color = Color.Unspecified,
-    /** 오래된 값이면 경과 초. null이면 신선함. */
-    ageSec: Long? = null,
-    /** 경과 시간을 모르지만 과거 값인 경우 (HEARTBEAT 기반). */
-    stale: Boolean = false,
+    /** 과거 값이면 그 설명 ("Last update 16:24:05 (8s ago)"). null이면 신선함. */
+    staleNote: String? = null,
     note: String? = null,
 ) {
-    val isStale = stale || ageSec != null
+    val isStale = staleNote != null
     Column {
         Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, style = MaterialTheme.typography.titleLarge, color = if (isStale) Stale else valueColor)
-        when {
-            ageSec != null -> Text("Last update ${ageSec}s ago", style = MaterialTheme.typography.labelMedium, color = Warning)
-            stale -> Text("Last known value", style = MaterialTheme.typography.labelMedium, color = Warning)
-        }
+        staleNote?.let { Text(it, style = MaterialTheme.typography.labelMedium, color = Warning) }
         note?.let { Text(it, style = MaterialTheme.typography.labelMedium, color = Danger) }
     }
 }
@@ -227,12 +240,13 @@ private fun DashboardPreview() {
         DashboardUiState(
             drone = DroneState(
                 connection = ConnectionStatus.LOST,
+                connectionLostAt = Timestamp(elapsedMs = 2_000L, epochMs = 0L),
                 altitude = 32.0,
                 batteryPercent = 15,
                 gpsAvailable = false,
                 latitude = 47.3977,
                 longitude = 8.5456,
-                receivedAt = mapOf(TelemetryField.POSITION to 0L, TelemetryField.BATTERY to 0L),
+                receivedAt = mapOf(TelemetryField.POSITION to Timestamp(0L, 0L), TelemetryField.BATTERY to Timestamp(0L, 0L)),
             ),
             warnings = DroneWarningState(
                 connectionLost = true,
@@ -241,7 +255,7 @@ private fun DashboardPreview() {
                 lowBattery = true,
             ),
             commandStates = mapOf(DroneCommand.ARM to CommandState.Failed(CommandFailureReason.TIMEOUT, "TIMEOUT: Timeout")),
-            nowMs = 8_000L,
+            nowElapsedMs = 8_000L,
         ),
         onCommand = {},
     )

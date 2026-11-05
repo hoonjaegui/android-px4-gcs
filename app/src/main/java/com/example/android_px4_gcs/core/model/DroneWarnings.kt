@@ -8,10 +8,16 @@ data class DroneWarningState(
     val staleFields: Set<TelemetryField> = emptySet(),
     /** 기체가 GPS fix 없음을 보고함. */
     val gpsUnavailable: Boolean = false,
+    /** GPS는 있지만 PX4 EKF가 위경도 추정을 신뢰하지 않음. */
+    val positionUnreliable: Boolean = false,
     val lowBattery: Boolean = false,
 ) {
-    /** 연결은 살아 있는데 데이터가 안 들어옴. 연결이 끊긴 경우는 connectionLost가 대표한다. */
-    val telemetryStale: Boolean get() = !connectionLost && staleFields.isNotEmpty()
+    /**
+     * 연결은 살아 있는데 데이터가 안 들어옴. 연결이 끊긴 경우는 connectionLost가 대표하고,
+     * GPS/EKF 불량으로 위경도를 일부러 안 받는 경우는 해당 경고가 대표한다.
+     */
+    val telemetryStale: Boolean
+        get() = !connectionLost && staleFields.any { it != TelemetryField.POSITION || !(gpsUnavailable || positionUnreliable) }
 }
 
 object DroneWarningPolicy {
@@ -19,12 +25,14 @@ object DroneWarningPolicy {
     const val STALE_AFTER_MS = 3_000L
     const val LOW_BATTERY_PERCENT = 20
 
-    fun evaluate(state: DroneState, nowMs: Long): DroneWarningState = DroneWarningState(
+    /** @param nowElapsedMs SystemClock.elapsedRealtime 기준 현재 시각. */
+    fun evaluate(state: DroneState, nowElapsedMs: Long): DroneWarningState = DroneWarningState(
         connectionLost = state.connection == ConnectionStatus.LOST,
         staleFields = state.receivedAt
-            .filterValues { receivedAt -> nowMs - receivedAt > STALE_AFTER_MS }
+            .filterValues { receivedAt -> nowElapsedMs - receivedAt.elapsedMs > STALE_AFTER_MS }
             .keys,
         gpsUnavailable = state.gpsAvailable == false,
+        positionUnreliable = state.gpsAvailable != false && state.globalPositionOk == false,
         lowBattery = state.batteryPercent?.let { it < LOW_BATTERY_PERCENT } ?: false,
     )
 }
