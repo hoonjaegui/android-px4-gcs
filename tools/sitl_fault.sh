@@ -38,7 +38,8 @@ GPS (드론의 GPS 수신기 고장 — 휴대폰 GPS와 무관)
   link-cut           브리지 종료               → 앱: CONNECTION LOST + 예상 동작
   link-restore       브리지 재시작             → 앱: 자동 재연결
   dll <0|1|2|3>      통신 두절 시 PX4 행동 (0=없음[기본] 1=Hold 2=RTL 3=Land)
-                     ※ 앱은 연결될 때 이 값을 읽으므로, 바꾼 뒤 link-cut/restore 한 번 하면 반영됨
+                     ※ 앱의 "Link loss failsafe"에서 바꾸는 게 편함 (즉시 반영).
+                       여기서 바꾸면 앱은 다음 연결 때 읽으므로 link-cut/restore 한 번 필요
 
 Telemetry (연결은 살아 있고 위치 데이터만 안 옴)
   telemetry-off      위치 메시지 전송 중단     → 앱: TELEMETRY LOST
