@@ -15,6 +15,7 @@ import com.example.android_px4_gcs.core.model.Timestamp
 import com.example.android_px4_gcs.di.ApplicationScope
 import com.example.android_px4_gcs.domain.drone.DroneRepository
 import io.mavsdk.action.Action
+import io.mavsdk.param.Param
 import io.mavsdk.telemetry.Telemetry
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -66,8 +68,12 @@ class DefaultDroneRepository @Inject constructor(
 
     private fun now() = Timestamp(elapsedMs = SystemClock.elapsedRealtime(), epochMs = System.currentTimeMillis())
 
+    /** Telemetry 스트림이 아닌, Repository가 직접 만든 상태 변경 (예: 파라미터를 쓴 뒤 다시 읽은 값). */
+    private val localUpdates = MutableSharedFlow<Update>(extraBufferCapacity = 16)
+
     override val droneState: StateFlow<DroneState> =
         merge(
+            localUpdates,
             dataSource.isConnected.map { connected -> Update { it.withConnection(connected) } },
             dataSource.batteryPercent.toTelemetryUpdate(TelemetryField.BATTERY) { copy(batteryPercent = it.roundToInt()) },
             dataSource.gpsInfo.toTelemetryUpdate(TelemetryField.GPS) { copy(gpsAvailable = it.fixType.hasPositionFix()) },
@@ -105,6 +111,45 @@ class DefaultDroneRepository @Inject constructor(
     override suspend fun land(): CommandResult = runCommand("land") { dataSource.land() }
 
     override suspend fun returnToLaunch(): CommandResult = runCommand("rtl") { dataSource.returnToLaunch() }
+
+    override suspend fun setLinkLossAction(action: LinkLossAction): CommandResult {
+        val value = action.navDllAct
+            ?: return CommandResult.Failure(CommandFailureReason.UNKNOWN, "cannot write $action")
+        if (!droneState.value.isConnected) {
+            return CommandResult.Failure(CommandFailureReason.NOT_CONNECTED, "not connected")
+        }
+
+        val writeFailure: CommandResult.Failure? = try {
+            dataSource.setParamInt("NAV_DLL_ACT", value)
+            null
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Param.ParamException) {
+            Log.w(TAG, "set NAV_DLL_ACT=$value failed: ${e.code} ${e.description}")
+            CommandResult.Failure(e.code.toFailureReason(), "${e.code}: ${e.description}")
+        } catch (e: Exception) {
+            CommandResult.Failure(CommandFailureReason.UNKNOWN, e.message ?: e.javaClass.simpleName)
+        }
+
+        // 쓰기 성공/실패와 무관하게 기체에서 다시 읽는다. 쓰기가 TIMEOUT이어도 실제로는 반영됐을 수 있다.
+        val readBack = readLinkLossPolicy()
+        if (readBack != null) localUpdates.emit(Update { it.copy(linkLossPolicy = readBack) })
+
+        return when {
+            readBack?.action == action -> CommandResult.Success
+            writeFailure != null -> writeFailure
+            readBack == null -> CommandResult.Failure(CommandFailureReason.TIMEOUT, "written, but could not read back to verify")
+            else -> CommandResult.Failure(CommandFailureReason.REJECTED, "vehicle reports ${readBack.action}")
+        }
+    }
+
+    private fun Param.ParamResult.Result.toFailureReason(): CommandFailureReason = when (this) {
+        Param.ParamResult.Result.NO_SYSTEM,
+        Param.ParamResult.Result.CONNECTION_ERROR -> CommandFailureReason.NOT_CONNECTED
+        Param.ParamResult.Result.TIMEOUT -> CommandFailureReason.TIMEOUT
+        Param.ParamResult.Result.UNKNOWN -> CommandFailureReason.UNKNOWN
+        else -> CommandFailureReason.REJECTED // 범위 초과, 읽기 전용, 타입 불일치 등
+    }
 
     private suspend fun readLinkLossPolicy(): LinkLossPolicy? = try {
         LinkLossPolicy(

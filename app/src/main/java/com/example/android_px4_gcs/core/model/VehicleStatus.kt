@@ -18,20 +18,21 @@ data class LinkLossPolicy(
     val timeoutSec: Int,
 )
 
-enum class LinkLossAction {
-    DISABLED, HOLD, RETURN, LAND, TERMINATE, DISARM, UNKNOWN;
+enum class LinkLossAction(
+    /** PX4 NAV_DLL_ACT 값. UNKNOWN은 쓸 수 없다. */
+    val navDllAct: Int?,
+) {
+    DISABLED(0), HOLD(1), RETURN(2), LAND(3), TERMINATE(5), DISARM(6), UNKNOWN(null);
 
     companion object {
+        /**
+         * GCS에서 고를 수 있게 할 값. TERMINATE(모터 즉시 정지 → 추락)와 DISARM(공중에서 무장해제)은
+         * 사고로 직결되므로 버튼 하나로 바꾸지 못하게 뺀다.
+         */
+        val selectable: List<LinkLossAction> = listOf(DISABLED, HOLD, RETURN, LAND)
+
         /** PX4 commander_params.yaml의 NAV_DLL_ACT 값. */
-        fun fromNavDllAct(value: Int): LinkLossAction = when (value) {
-            0 -> DISABLED
-            1 -> HOLD
-            2 -> RETURN
-            3 -> LAND
-            5 -> TERMINATE
-            6 -> DISARM
-            else -> UNKNOWN
-        }
+        fun fromNavDllAct(value: Int): LinkLossAction = entries.firstOrNull { it.navDllAct == value } ?: UNKNOWN
     }
 }
 

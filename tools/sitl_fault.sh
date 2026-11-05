@@ -15,7 +15,16 @@ ROOTFS="$PX4_DIR/build/px4_sitl_default/rootfs"
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ONBOARD_PORT=14580   # 앱(MAVSDK)이 붙는 PX4 Onboard 링크의 PX4 쪽 포트
 
-px4() { (cd "$ROOTFS" && "$BIN/px4-$1" "${@:2}"); }
+# px4 클라이언트는 간헐적으로 데몬 응답을 못 받고 멈춘다 → 5초 timeout + 최대 3회 재시도.
+# 이 스크립트의 명령은 모두 재실행해도 결과가 같은 것(값 설정, on/off)이라 재시도해도 안전하다.
+px4() {
+  local attempt
+  for attempt in 1 2 3; do
+    if (cd "$ROOTFS" && perl -e 'alarm shift; exec @ARGV' 5 "$BIN/px4-$1" "${@:2}"); then return 0; fi
+  done
+  echo "px4-$1 failed or timed out (3 attempts)" >&2
+  return 1
+}
 px4_pid() { pgrep -x px4 | head -1; }
 bridge_running() { pgrep -f mavlink_udp_tcp_bridge >/dev/null; }
 

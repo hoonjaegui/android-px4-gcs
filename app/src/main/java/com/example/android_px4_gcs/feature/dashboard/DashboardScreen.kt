@@ -3,6 +3,8 @@ package com.example.android_px4_gcs.feature.dashboard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +17,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -32,7 +35,9 @@ import com.example.android_px4_gcs.core.model.ConnectionStatus
 import com.example.android_px4_gcs.core.model.DroneCommand
 import com.example.android_px4_gcs.core.model.DroneState
 import com.example.android_px4_gcs.core.model.DroneWarningState
+import com.example.android_px4_gcs.core.model.LinkLossAction
 import com.example.android_px4_gcs.core.model.LinkLossOutlook
+import com.example.android_px4_gcs.core.model.LinkLossPolicy
 import com.example.android_px4_gcs.core.model.MessageSeverity
 import com.example.android_px4_gcs.core.model.TelemetryField
 import com.example.android_px4_gcs.core.model.Timestamp
@@ -51,13 +56,14 @@ fun DashboardRoute(
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    DashboardScreen(uiState, viewModel::onCommand, modifier)
+    DashboardScreen(uiState, viewModel::onCommand, viewModel::onLinkLossActionSelected, modifier)
 }
 
 @Composable
 fun DashboardScreen(
     uiState: DashboardUiState,
     onCommand: (DroneCommand) -> Unit,
+    onLinkLossActionSelected: (LinkLossAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state = uiState.drone
@@ -152,6 +158,14 @@ fun DashboardScreen(
         }
 
         HorizontalDivider()
+        LinkLossSettingSection(
+            policy = state.linkLossPolicy,
+            setting = uiState.linkLossSetting,
+            enabled = state.isConnected,
+            onSelect = onLinkLossActionSelected,
+        )
+
+        HorizontalDivider()
         Text("Vehicle messages", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (state.messages.isEmpty()) Text(NO_DATA)
         state.messages.forEach { message ->
@@ -164,6 +178,50 @@ fun DashboardScreen(
                     MessageSeverity.ERROR -> Danger
                 },
             )
+        }
+    }
+}
+
+/**
+ * 통신 두절 시 기체 행동 설정. 값은 기체(PX4 파라미터)에 저장되고, 화면에 표시하는 건
+ * "쓰려고 한 값"이 아니라 "기체에서 다시 읽은 값"이다.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun LinkLossSettingSection(
+    policy: LinkLossPolicy?,
+    setting: LinkLossSettingState,
+    enabled: Boolean,
+    onSelect: (LinkLossAction) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Link loss failsafe", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            text = policy?.let { "Vehicle: ${it.action.name} after ${it.timeoutSec}s without GCS" } ?: NO_DATA,
+            style = MaterialTheme.typography.titleMedium,
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            val running = setting.state == CommandState.Running
+            LinkLossAction.selectable.forEach { action ->
+                val selected = policy?.action == action
+                if (selected) {
+                    Button(onClick = {}, enabled = enabled) { Text(action.name) }
+                } else {
+                    OutlinedButton(onClick = { onSelect(action) }, enabled = enabled && !running) { Text(action.name) }
+                }
+            }
+        }
+        when (val s = setting.state) {
+            CommandState.Idle -> Unit
+            CommandState.Running -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                Text("Writing ${setting.requested?.name} to vehicle...", style = MaterialTheme.typography.labelMedium)
+            }
+            CommandState.Success -> Text("Saved on vehicle (verified by read-back)", color = Ok, style = MaterialTheme.typography.labelMedium)
+            is CommandState.Failed -> Column {
+                Text("Failed to set ${setting.requested?.name}: ${s.reason.headline()}", color = Danger, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                Text(s.detail, style = MaterialTheme.typography.labelSmall, color = Stale)
+            }
         }
     }
 }
@@ -287,5 +345,6 @@ private fun DashboardPreview() {
             nowElapsedMs = 8_000L,
         ),
         onCommand = {},
+        onLinkLossActionSelected = {},
     )
 }

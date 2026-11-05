@@ -153,4 +153,10 @@ python3 tools/mavlink_udp_tcp_bridge.py          # PX4 UDP 14540 <-> TCP 5760
   - 연결될 때마다 `param.getParamInt("NAV_DLL_ACT" / "COM_DL_LOSS_T")` → `LinkLossPolicy`. LOST 동안 `LinkLossOutlook`(Unknown / NoAction / Pending / Triggered) 표시
   - 실기기: GPS off + ARM → `PX4: Arming denied: Resolve system health failures first`. `NAV_DLL_ACT=2` + 이륙 + link-cut → "will enter RETURN in ~7s" → "has likely entered RETURN (~6s ago). Unconfirmed until reconnected" → 재연결 시 실제 RETURN / 착지 중 확인
   - 한계: 파라미터는 연결 시점에만 읽음 (연결 중 변경은 재연결해야 반영). 예상 시간은 GCS LOST 판정(3초)과 PX4 판정의 차이만큼 오차
+- [x] 9. 앱에서 통신 두절 failsafe 설정 (2026-11-05)
+  - `Link loss failsafe` 섹션: DISABLED / HOLD / RETURN / LAND (TERMINATE·DISARM은 공중 사고 위험이라 제외). `param.setParamInt("NAV_DLL_ACT")` → **성공/실패와 무관하게 다시 읽어** 기체 값으로 판정·표시 (쓰기 TIMEOUT이어도 실제 반영됐을 수 있음). 표시는 "쓰려던 값"이 아니라 "기체에서 읽은 값"
+  - 설정은 기체(FC)에 저장되고 GCS는 쓰기만 한다 — 끊긴 순간 GCS는 아무것도 못 하므로. QGC는 Vehicle Setup → Safety → Data Link Loss에서 같은 파라미터를 씀
+  - QGC가 켜져 있으면 PX4는 GCS가 살아 있다고 보고 앱 링크를 끊어도 failsafe 안 함 → 실험 시 QGC 종료
+  - 실기기: 앱 RETURN → PX4 `NAV_DLL_ACT : 2`, 앱 DISABLED → `0` 확인
+  - `sitl_fault.sh`: px4 클라이언트가 간헐적으로 멈춤 → 5초 timeout + 3회 재시도
 - 명령 "수락"과 "목표 달성"(예: 착지 완료)의 연결은 하지 않기로 함 — PX4가 Flight Mode(HEARTBEAT)와 landed state로 이미 제공하므로 앱이 별도 상태를 만들 필요 없음

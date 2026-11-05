@@ -110,6 +110,9 @@ class MavsdkDroneDataSource @Inject constructor(
     /** PX4 정수 파라미터 읽기 (PARAM_REQUEST_READ → PARAM_VALUE). */
     suspend fun getParamInt(name: String): Int = requireSystem().param.getParamInt(name).await()
 
+    /** PX4 정수 파라미터 쓰기 (PARAM_SET → PARAM_VALUE 확인). 실패 시 [io.mavsdk.param.Param.ParamException]. */
+    suspend fun setParamInt(name: String, value: Int) = requireSystem().param.setParamInt(name, value).await()
+
     private fun requireSystem(): System =
         system.value ?: throw VehicleNotDiscoveredException()
 
