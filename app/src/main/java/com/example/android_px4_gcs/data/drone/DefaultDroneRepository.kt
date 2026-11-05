@@ -60,6 +60,12 @@ class DefaultDroneRepository @Inject constructor(
 
     override suspend fun arm(): CommandResult = runCommand("arm") { dataSource.arm() }
 
+    override suspend fun takeoff(): CommandResult = runCommand("takeoff") { dataSource.takeoff() }
+
+    override suspend fun land(): CommandResult = runCommand("land") { dataSource.land() }
+
+    override suspend fun returnToLaunch(): CommandResult = runCommand("rtl") { dataSource.returnToLaunch() }
+
     /** MAVSDK 예외를 도메인 결과로 변환. ViewModel은 MAVSDK 타입을 모른다. */
     private suspend fun runCommand(name: String, block: suspend () -> Unit): CommandResult =
         try {

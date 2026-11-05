@@ -90,6 +90,15 @@ class MavsdkDroneDataSource @Inject constructor(
      */
     suspend fun arm() = requireSystem().action.arm().await()
 
+    /** 이륙 (MAV_CMD_NAV_TAKEOFF). 고도는 PX4 파라미터 MIS_TAKEOFF_ALT(기본 2.5m). ARM 상태여야 한다. */
+    suspend fun takeoff() = requireSystem().action.takeoff().await()
+
+    /** 현재 위치에 착륙 (MAV_CMD_NAV_LAND). 착지 감지 후 PX4가 자동 Disarm. */
+    suspend fun land() = requireSystem().action.land().await()
+
+    /** 홈으로 복귀 후 착륙 (MAV_CMD_NAV_RETURN_TO_LAUNCH). */
+    suspend fun returnToLaunch() = requireSystem().action.returnToLaunch().await()
+
     private fun requireSystem(): System =
         system.value ?: throw VehicleNotDiscoveredException()
 

@@ -114,5 +114,9 @@ python3 tools/mavlink_udp_tcp_bridge.py          # PX4 UDP 14540 <-> TCP 5760
 - [x] 1. ARM — `DroneCommand`/`CommandResult`/`CommandState`(core/model), `MavsdkDroneDataSource.arm()`(`action.arm().await()`), `DefaultDroneRepository.runCommand`가 `ActionException(code, description)` → `CommandResult.Failure`로 변환(MAVSDK 타입 차단), `DashboardViewModel.onCommand`가 명령별 Idle→Running→Success/Failed 관리(Running 중 중복 전송 차단) (2026-11-05)
   - 실기기: ARM 탭 → `arm accepted` / PX4 `Armed by external command` / 화면 ACCEPTED + Armed TRUE → 약 10초 후 `Disarmed by auto preflight disarming`으로 Armed FALSE, 명령 상태는 ACCEPTED 그대로
   - 핵심: Command 결과(ACK 수락)와 기체 상태(Telemetry)는 별개. 상태 판단은 항상 Telemetry로
+- [x] 2~4. TAKEOFF / LAND / RTL — `action.takeoff()/land()/returnToLaunch().await()`, 계층마다 메서드 하나 + `DroneCommand` enum 항목 추가 (2026-11-05)
+  - Disarm 상태에서 TAKEOFF → **ACCEPTED**, Flight Mode TAKEOFF로 바뀌지만 Armed FALSE / 0m (모드만 전환). 이어서 ARM → 즉시 `Takeoff detected` (미리 걸린 모드대로 이륙)
+  - RTL(2.5m 호버링 중) → Flight Mode RETURN → `RTL: start return at 492 m (3 m above destination)` → `land at destination` → `Disarmed by landing`
+  - 완료 조건: ARM → TAKEOFF(HOLD, 2.4m) → LAND(Flight Mode LAND, 1.6m) → `Disarmed by landing`(HOLD, Armed FALSE, 0.2m). 네 명령 모두 앱 버튼으로, 상태 변화는 앱 Telemetry로 확인
 
 ### Week 4 — 미시작

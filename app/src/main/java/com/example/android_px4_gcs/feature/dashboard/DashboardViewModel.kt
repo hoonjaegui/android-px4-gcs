@@ -33,6 +33,9 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             val result = when (command) {
                 DroneCommand.ARM -> repository.arm()
+                DroneCommand.TAKEOFF -> repository.takeoff()
+                DroneCommand.LAND -> repository.land()
+                DroneCommand.RTL -> repository.returnToLaunch()
             }
             setState(
                 command,

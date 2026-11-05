@@ -3,6 +3,9 @@ package com.example.android_px4_gcs.core.model
 /** GCS가 보낼 수 있는 명령. */
 enum class DroneCommand {
     ARM,
+    TAKEOFF,
+    LAND,
+    RTL,
 }
 
 /**

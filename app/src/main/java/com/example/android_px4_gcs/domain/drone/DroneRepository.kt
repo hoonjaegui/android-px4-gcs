@@ -8,4 +8,10 @@ interface DroneRepository {
     val droneState: StateFlow<DroneState>
 
     suspend fun arm(): CommandResult
+
+    suspend fun takeoff(): CommandResult
+
+    suspend fun land(): CommandResult
+
+    suspend fun returnToLaunch(): CommandResult
 }
