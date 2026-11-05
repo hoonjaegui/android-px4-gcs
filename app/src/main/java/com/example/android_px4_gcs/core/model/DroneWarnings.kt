@@ -11,6 +11,8 @@ data class DroneWarningState(
     /** GPS는 있지만 PX4 EKF가 위경도 추정을 신뢰하지 않음. */
     val positionUnreliable: Boolean = false,
     val lowBattery: Boolean = false,
+    /** 연결이 끊겼을 때 기체의 예상 행동. 연결 중이면 null. */
+    val linkLossOutlook: LinkLossOutlook? = null,
 ) {
     /**
      * 연결은 살아 있는데 데이터가 안 들어옴. 연결이 끊긴 경우는 connectionLost가 대표하고,
@@ -34,5 +36,6 @@ object DroneWarningPolicy {
         gpsUnavailable = state.gpsAvailable == false,
         positionUnreliable = state.gpsAvailable != false && state.globalPositionOk == false,
         lowBattery = state.batteryPercent?.let { it < LOW_BATTERY_PERCENT } ?: false,
+        linkLossOutlook = LinkLossOutlook.of(state, nowElapsedMs),
     )
 }

@@ -25,7 +25,18 @@ data class DroneState(
     val globalPositionOk: Boolean? = null,
     /** 필드별 마지막 수신 시각. */
     val receivedAt: Map<TelemetryField, Timestamp> = emptyMap(),
+    /** PX4 STATUSTEXT, 최신순 최대 [MAX_MESSAGES]개. */
+    val messages: List<VehicleMessage> = emptyList(),
+    /** 연결될 때마다 PX4 파라미터에서 읽는다. 못 읽었으면 null. */
+    val linkLossPolicy: LinkLossPolicy? = null,
 ) {
+    fun withMessage(message: VehicleMessage): DroneState =
+        copy(messages = (listOf(message) + messages).take(MAX_MESSAGES))
+
+    companion object {
+        const val MAX_MESSAGES = 5
+    }
+
     val isConnected: Boolean get() = connection == ConnectionStatus.CONNECTED
 
     /** 들어오는 위경도를 믿어도 되는가. 모르는 경우(null)는 믿는다. */

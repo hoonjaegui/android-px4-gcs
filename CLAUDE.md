@@ -49,6 +49,12 @@ make px4_sitl
 검증된 환경: Apple Silicon(arm64), macOS 15.0, RAM 32GB / QGC 5.1.5 / PX4 v1.18.0-rc1 (Week 1은 v1.17.0) / Python 3.12.16 / cmake 4.4.4
 Android: Android Studio JBR 21 (`JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"`), AGP 9.2.1, Gradle 9.4.1, MAVSDK Java/mavsdk-server 4.1.0, Hilt 2.59.2 + KSP 2.3.4 (버전은 사용자 프로덕트 Grider_Rider 기준)
 
+### 장애 주입 (`tools/sitl_fault.sh`)
+
+휴대폰이 아니라 **PX4 SITL(시뮬 드론) 쪽**에 장애를 넣는다. PX4 클라이언트 명령(`build/px4_sitl_default/bin/px4-*`)을 쓰므로 SITL이 어느 터미널에서 돌든 동작. `tools/sitl_fault.sh help`로 전체 목록.
+- `gps-off/on`, `link-cut/restore`(브리지 종료/재시작), `dll <0|1|2|3>`(NAV_DLL_ACT), `telemetry-off/on`, `freeze/resume`(PX4 SIGSTOP/CONT), `battery-low/reset`, `takeoff/land/rtl`, `status`, `reset`(전부 원복)
+- 폰 쪽 통신 두절은 USB를 뽑으면 됨 (다시 꽂은 뒤 `adb reverse tcp:5760 tcp:5760`)
+
 ### Android 앱을 SITL에 붙이기
 
 앱 안에서 mavsdk_server가 돌고, PX4의 Onboard 링크(UDP 14540)를 받는다. QGC(14550)와 동시 연결 가능.
@@ -142,4 +148,9 @@ python3 tools/mavlink_udp_tcp_bridge.py          # PX4 UDP 14540 <-> TCP 5760
   - `NAV_DLL_ACT=0`(**PX4 기본값**, `COM_DL_LOSS_T=10`): 18초 지나도 failsafe 없음, HOLD로 계속 호버링
   - `NAV_DLL_ACT=2`(RTL): `Failsafe activated: entering Hold for 5 seconds` → `RTL: start return` → 착지·Disarm. 끊긴 동안 앱은 HOLD/Armed TRUE(last known)를 보여줬지만 재연결하니 실제는 착륙·Disarm 완료 → 끊긴 동안 기체 상태는 GCS가 알 수 없음
   - 테스트 후 `NAV_DLL_ACT 0`, `SYS_FAILURE_EN 0` 원복
-- 남은 한계: 거부 사유의 실제 원인(PX4 STATUSTEXT "Resolve system health failures first")은 앱에 안 보이고 `Command Denied`만 보임. 명령 "수락"과 "목표 달성"(예: 착지 완료)도 아직 연결 안 됨
+- [x] 8. 거부 사유 + 통신 두절 예상 동작 (2026-11-05)
+  - `telemetry.statusText`(STATUSTEXT) 수신 → 최근 5개 `Vehicle messages` 표시. 명령 실패 시 보낸 시각 이후의 WARNING 이상 메시지를 최대 500ms 기다려 `CommandResult.Failure.vehicleMessage`로 첨부 (ACK와 STATUSTEXT는 순서 보장 없음)
+  - 연결될 때마다 `param.getParamInt("NAV_DLL_ACT" / "COM_DL_LOSS_T")` → `LinkLossPolicy`. LOST 동안 `LinkLossOutlook`(Unknown / NoAction / Pending / Triggered) 표시
+  - 실기기: GPS off + ARM → `PX4: Arming denied: Resolve system health failures first`. `NAV_DLL_ACT=2` + 이륙 + link-cut → "will enter RETURN in ~7s" → "has likely entered RETURN (~6s ago). Unconfirmed until reconnected" → 재연결 시 실제 RETURN / 착지 중 확인
+  - 한계: 파라미터는 연결 시점에만 읽음 (연결 중 변경은 재연결해야 반영). 예상 시간은 GCS LOST 판정(3초)과 PX4 판정의 차이만큼 오차
+- 명령 "수락"과 "목표 달성"(예: 착지 완료)의 연결은 하지 않기로 함 — PX4가 Flight Mode(HEARTBEAT)와 landed state로 이미 제공하므로 앱이 별도 상태를 만들 필요 없음

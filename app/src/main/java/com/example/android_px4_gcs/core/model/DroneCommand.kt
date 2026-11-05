@@ -16,7 +16,15 @@ enum class DroneCommand {
  */
 sealed interface CommandResult {
     data object Success : CommandResult
-    data class Failure(val reason: CommandFailureReason, val detail: String) : CommandResult
+    /**
+     * @param detail MAVSDK 결과 코드 (예: "COMMAND_DENIED: Command Denied")
+     * @param vehicleMessage 거부 무렵 PX4가 보낸 STATUSTEXT. 실제 원인이 여기 있다.
+     */
+    data class Failure(
+        val reason: CommandFailureReason,
+        val detail: String,
+        val vehicleMessage: String? = null,
+    ) : CommandResult
 }
 
 /** 실패의 "의미"에 따른 분류. 운용자가 다음에 무엇을 해야 하는지가 다르다. */
@@ -37,5 +45,5 @@ sealed interface CommandState {
     data object Idle : CommandState
     data object Running : CommandState
     data object Success : CommandState
-    data class Failed(val reason: CommandFailureReason, val detail: String) : CommandState
+    data class Failed(val reason: CommandFailureReason, val detail: String, val vehicleMessage: String? = null) : CommandState
 }

@@ -76,6 +76,10 @@ class MavsdkDroneDataSource @Inject constructor(
     val globalPositionOk: Flow<Boolean> =
         telemetry("health") { it.telemetry.health.asFlow().map { h -> h.isGlobalPositionOk } }
 
+    /** PX4가 보내는 사람이 읽는 메시지 (STATUSTEXT). 거부 사유, failsafe 안내 등. */
+    val statusText: Flow<Telemetry.StatusText> =
+        telemetry("statusText") { it.telemetry.statusText.asFlow() }
+
     /** 기수 방향 (0~360°, 북=0, 시계방향). */
     val headingDeg: Flow<Double> =
         telemetry("heading") { it.telemetry.heading.asFlow().map { h -> h.headingDeg } }
@@ -102,6 +106,9 @@ class MavsdkDroneDataSource @Inject constructor(
 
     /** 홈으로 복귀 후 착륙 (MAV_CMD_NAV_RETURN_TO_LAUNCH). */
     suspend fun returnToLaunch() = requireSystem().action.returnToLaunch().await()
+
+    /** PX4 정수 파라미터 읽기 (PARAM_REQUEST_READ → PARAM_VALUE). */
+    suspend fun getParamInt(name: String): Int = requireSystem().param.getParamInt(name).await()
 
     private fun requireSystem(): System =
         system.value ?: throw VehicleNotDiscoveredException()

@@ -32,6 +32,8 @@ import com.example.android_px4_gcs.core.model.ConnectionStatus
 import com.example.android_px4_gcs.core.model.DroneCommand
 import com.example.android_px4_gcs.core.model.DroneState
 import com.example.android_px4_gcs.core.model.DroneWarningState
+import com.example.android_px4_gcs.core.model.LinkLossOutlook
+import com.example.android_px4_gcs.core.model.MessageSeverity
 import com.example.android_px4_gcs.core.model.TelemetryField
 import com.example.android_px4_gcs.core.model.Timestamp
 import java.text.SimpleDateFormat
@@ -84,6 +86,9 @@ fun DashboardScreen(
     ) {
         Text("PX4 GCS", style = MaterialTheme.typography.headlineMedium)
         WarningBanners(warnings)
+        warnings.linkLossOutlook?.let { outlook ->
+            Text(outlook.describe(), color = Danger, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+        }
 
         TelemetryItem(
             label = "Connection",
@@ -145,7 +150,30 @@ fun DashboardScreen(
                 onCommand = onCommand,
             )
         }
+
+        HorizontalDivider()
+        Text("Vehicle messages", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (state.messages.isEmpty()) Text(NO_DATA)
+        state.messages.forEach { message ->
+            Text(
+                text = "${TIME_FORMAT.format(Date(message.at.epochMs))}  ${message.text}",
+                style = MaterialTheme.typography.bodySmall,
+                color = when (message.severity) {
+                    MessageSeverity.INFO -> Color.Unspecified
+                    MessageSeverity.WARNING -> Warning
+                    MessageSeverity.ERROR -> Danger
+                },
+            )
+        }
     }
+}
+
+/** 연결이 끊긴 동안 기체가 무엇을 하고 있을지. 어디까지나 PX4 설정 기반 "예상"이다. */
+private fun LinkLossOutlook.describe(): String = when (this) {
+    LinkLossOutlook.Unknown -> "Vehicle link-loss action unknown (params not read)."
+    LinkLossOutlook.NoAction -> "Vehicle has no link-loss action (NAV_DLL_ACT=0): it keeps its last mode."
+    is LinkLossOutlook.Pending -> "Vehicle will enter ${action.name} in ~${remainingSec}s if the link stays down."
+    is LinkLossOutlook.Triggered -> "Vehicle has likely entered ${action.name} (~${sinceSec}s ago). Unconfirmed until reconnected."
 }
 
 @Composable
@@ -209,6 +237,7 @@ private fun CommandRow(
             CommandState.Success -> Text("ACCEPTED", color = Ok)
             is CommandState.Failed -> Column {
                 Text(state.reason.headline(), color = Danger, fontWeight = FontWeight.Bold)
+                state.vehicleMessage?.let { Text("PX4: $it", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold) }
                 Text(state.reason.guidance(), style = MaterialTheme.typography.labelMedium)
                 Text(state.detail, style = MaterialTheme.typography.labelSmall, color = Stale)
             }

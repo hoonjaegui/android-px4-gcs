@@ -72,7 +72,7 @@ class DashboardViewModel @Inject constructor(
                 command,
                 when (result) {
                     CommandResult.Success -> CommandState.Success
-                    is CommandResult.Failure -> CommandState.Failed(result.reason, result.detail)
+                    is CommandResult.Failure -> CommandState.Failed(result.reason, result.detail, result.vehicleMessage)
                 },
             )
         }

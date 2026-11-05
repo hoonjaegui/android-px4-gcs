@@ -6,6 +6,10 @@ import com.example.android_px4_gcs.core.model.CommandFailureReason
 import com.example.android_px4_gcs.core.model.CommandResult
 import com.example.android_px4_gcs.core.model.ConnectionStatus
 import com.example.android_px4_gcs.core.model.DroneState
+import com.example.android_px4_gcs.core.model.LinkLossAction
+import com.example.android_px4_gcs.core.model.LinkLossPolicy
+import com.example.android_px4_gcs.core.model.MessageSeverity
+import com.example.android_px4_gcs.core.model.VehicleMessage
 import com.example.android_px4_gcs.core.model.TelemetryField
 import com.example.android_px4_gcs.core.model.Timestamp
 import com.example.android_px4_gcs.di.ApplicationScope
@@ -17,6 +21,14 @@ import javax.inject.Singleton
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -31,6 +43,7 @@ import kotlinx.coroutines.flow.stateIn
  * 각 스트림은 서로 다른 주기로 들어오므로, 스트림마다 "DroneState를 어떻게 갱신할지"(Update)로
  * 변환한 뒤 merge → scan으로 누적한다. 스트림이 늘어도 이 구조는 그대로다.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 @Singleton
 class DefaultDroneRepository @Inject constructor(
     private val dataSource: MavsdkDroneDataSource,
@@ -63,6 +76,14 @@ class DefaultDroneRepository @Inject constructor(
                 Update { it.withPosition(p.latitudeDeg, p.longitudeDeg, p.relativeAltitudeM.toDouble(), now()) }
             },
             dataSource.globalPositionOk.toStateUpdate { copy(globalPositionOk = it) },
+            dataSource.statusText.map { msg ->
+                Update { it.withMessage(VehicleMessage(msg.type.toSeverity(), msg.text, now())) }
+            },
+            // 연결될 때마다 다시 읽는다 (재연결 사이에 설정이 바뀌었을 수 있다).
+            dataSource.isConnected.distinctUntilChanged().filter { it }
+                .mapLatest { readLinkLossPolicy() }
+                .filterNotNull()
+                .toStateUpdate { copy(linkLossPolicy = it) },
             dataSource.headingDeg.toTelemetryUpdate(TelemetryField.HEADING) { copy(heading = it) },
             dataSource.armed.toStateUpdate { copy(armed = it) },
             dataSource.flightMode.toStateUpdate { copy(flightMode = it.toDisplayName()) },
@@ -85,8 +106,38 @@ class DefaultDroneRepository @Inject constructor(
 
     override suspend fun returnToLaunch(): CommandResult = runCommand("rtl") { dataSource.returnToLaunch() }
 
-    /** MAVSDK 예외를 도메인 결과로 변환. ViewModel은 MAVSDK 타입을 모른다. */
-    private suspend fun runCommand(name: String, block: suspend () -> Unit): CommandResult =
+    private suspend fun readLinkLossPolicy(): LinkLossPolicy? = try {
+        LinkLossPolicy(
+            action = LinkLossAction.fromNavDllAct(dataSource.getParamInt("NAV_DLL_ACT")),
+            timeoutSec = dataSource.getParamInt("COM_DL_LOSS_T"),
+        ).also { Log.i(TAG, "link loss policy: $it") }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Log.w(TAG, "failed to read link loss params", e)
+        null
+    }
+
+    /** MAVSDK 예외를 도메인 결과로 변환하고, 실패면 PX4가 보낸 사유 메시지를 붙인다. */
+    private suspend fun runCommand(name: String, block: suspend () -> Unit): CommandResult {
+        val sentAt = SystemClock.elapsedRealtime()
+        val result = executeCommand(name, block)
+        if (result !is CommandResult.Failure || result.reason == CommandFailureReason.NOT_CONNECTED) return result
+        return result.copy(vehicleMessage = awaitVehicleMessageSince(sentAt))
+    }
+
+    /**
+     * 명령을 보낸 뒤 PX4가 보낸 WARNING 이상 메시지. STATUSTEXT와 COMMAND_ACK는 별개 메시지라
+     * 순서가 보장되지 않으므로, 이미 와 있으면 바로 쓰고 아니면 잠깐 기다린다.
+     */
+    private suspend fun awaitVehicleMessageSince(sentAtElapsedMs: Long): String? =
+        withTimeoutOrNull(VEHICLE_MESSAGE_WAIT_MS) {
+            droneState.mapNotNull { state ->
+                state.messages.firstOrNull { it.at.elapsedMs >= sentAtElapsedMs && it.severity != MessageSeverity.INFO }?.text
+            }.first()
+        }
+
+    private suspend fun executeCommand(name: String, block: suspend () -> Unit): CommandResult =
         try {
             block()
             Log.i(TAG, "$name accepted")
@@ -116,6 +167,14 @@ class DefaultDroneRepository @Inject constructor(
         else -> CommandFailureReason.UNKNOWN
     }
 
+    private fun Telemetry.StatusTextType.toSeverity(): MessageSeverity = when (this) {
+        Telemetry.StatusTextType.DEBUG,
+        Telemetry.StatusTextType.INFO,
+        Telemetry.StatusTextType.NOTICE -> MessageSeverity.INFO
+        Telemetry.StatusTextType.WARNING -> MessageSeverity.WARNING
+        else -> MessageSeverity.ERROR
+    }
+
     /** 3D fix 이상이어야 위치로 쓸 수 있다. */
     private fun Telemetry.FixType.hasPositionFix(): Boolean =
         this >= Telemetry.FixType.FIX_3D
@@ -135,5 +194,6 @@ class DefaultDroneRepository @Inject constructor(
 
     private companion object {
         const val TAG = "DroneRepository"
+        const val VEHICLE_MESSAGE_WAIT_MS = 500L
     }
 }
