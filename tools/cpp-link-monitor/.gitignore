@@ -1,0 +1,6 @@
+# build outputs
+*.ii
+*.o
+*.s
+build/
+learn/**/hello

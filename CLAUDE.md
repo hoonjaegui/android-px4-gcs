@@ -181,5 +181,8 @@ python3 tools/mavlink_udp_tcp_bridge.py          # PX4 UDP 14540 <-> TCP 5760
 - [x] Android 기준선 분석 (2026-11-09) — `docs/architecture.md`(구조·데이터 흐름·명령·연결 끊김·테스트 현황·Phase 2 진단), `docs/environment.md`(버전)
   - 기존 단위 테스트 18개 통과(`./gradlew testDebugUnitTest`). 테스트는 `core.model` 순수 함수만 다룬다. Repository/ViewModel은 DataSource가 구체 클래스 + MAVSDK 타입 반환 + `SystemClock`/`Log` 직접 호출이라 JVM 테스트 불가 → W5/W6에서 필요할 때 interface/Clock 추출 (지금은 안 고침)
   - 앱의 mavsdk_server는 logcat에 `MAVSDK version: 0.0.0`으로 찍힘 (AAR 빌드에 버전 태그 없음). 버전은 Gradle 좌표 4.1.0으로 관리
-- [ ] C++ 기초 ① — 환경(Apple clang 16, cmake 4.4.4 확인), 컴파일/링크, header/source, const, 참조/포인터, 콘솔 프로그램
+- [ ] C++ 기초 ① — 진행 상세·결과는 `tools/cpp-link-monitor/learn/week1/NOTES.md` (단계 1~5 표)
+  - 에디터: Cursor + clangd 확장 (learn/에서는 Cursor Tab 끄기 권장). `compile_flags.txt`는 아직 안 만듦(제안만 함)
+  - 1단계 컴파일/링크: 실습 완료 (2026-11-09) — 빈 파일→링크 에러 `_main`, 오타→컴파일 에러, 정상→`.ii` 83,248줄·`nm` T/U·`otool -L`. **다음 세션: 확인 질문 2개 답변 받고 → 2단계(header/source 분리 + 일부러 링크 에러)**
+  - 사용자가 코드를 직접 작성, Claude는 설명·리뷰만. 사용자가 설명 줄까지 터미널에 붙여 넣는 일이 있었음 → 명령은 주석 없는 코드 블록으로만 준다
 - [ ] 주말 — SITL 연결, Takeoff/Land, Connection Loss 각 3회, C++ 프로그램 빌드·실행
