@@ -20,6 +20,11 @@ Android GCS → MAVSDK → MAVLink(UDP) → PX4 SITL → Simulated Drone
 - 각 단계는 **성공을 확인한 뒤** 다음 단계로 넘어간다.
 - Week 1은 Android 코드 작성 금지 (PX4/SITL/QGC/MAVLink 이해가 목표).
 - 서드파티 Homebrew tap(PX4/px4, osx-cross/arm)은 사용하지 않는다 (사용자 미승인, SITL엔 불필요).
+- **Phase 2** (12주, 계획서 `GCS with PX4 — Phase 2.md`, 레포 루트에 untracked로 둠): Android GCS + C++/Linux + 실제 PX4 FC 3트랙.
+  - 브랜치 `phase2-week1`, `phase2-week2`, ... (`main`에서 분기, 주차 종료 시 main에 ff 머지)
+  - 기능별 구현 계획을 먼저 제안하고, 한 번에 다 짜지 않는다. C++은 사용자가 완전 초보 → Kotlin과 비교해 설명하고 **사용자가 직접 작성**하게 한다
+  - 테스트/실행으로 확인하지 않은 것은 완료로 기록하지 않는다. 주말 SITL/FC 검증 항목은 따로 정리
+  - 문서는 `docs/`, C++ 도구는 `tools/cpp-link-monitor/` (계획서 9장)
 
 ## 로컬 환경 재현 (새 맥북에서)
 
@@ -168,3 +173,13 @@ python3 tools/mavlink_udp_tcp_bridge.py          # PX4 UDP 14540 <-> TCP 5760
 2. 마지막 GPS는 현재 위치인가 과거 위치인가? → **과거 위치다.** 게다가 "계속 들어오는 위경도"도 현재 위치라는 보장이 없다: GPS가 꺼져도 EKF 추정치가 계속 와서 stale 판정에 안 걸림(Scenario 3). 그래서 fix 없음/`isGlobalPositionOk == false`면 들어오는 값을 버리고 마지막 GPS 위치를 시각과 함께 고정 표시
 3. Connection Lost와 Drone Lost는 같은 의미인가? → **다르다.** Connection Lost는 "GCS가 기체 상태를 모른다"일 뿐 기체는 계속 비행한다. 브리지만 끊었을 때 앱은 HOLD/Armed(last known)를 보여줬지만 실제 기체는 `NAV_DLL_ACT=2`에 따라 RTL → 착륙·Disarm까지 끝냄. 끊긴 동안 GCS가 할 수 있는 건 기체에 미리 설정된 failsafe로 **예상**하는 것뿐(`LinkLossOutlook`, "Unconfirmed until reconnected"), 확인은 재연결 후
 4. Command가 Timeout이면 Drone이 명령을 수행하지 않은 것인가? → **모른다(응답만 잃었을 수 있다).** PX4 SIGSTOP 중 ARM → 앱 TIMEOUT → SIGCONT 하자 쌓여 있던 명령이 실행돼 Armed TRUE. 그래서 Timeout을 "실패"로 단정하지 않고 Telemetry로 실제 상태를 확인하며, 파라미터 쓰기도 결과와 무관하게 다시 읽어 기체 값으로 판정
+
+## Phase 2 진행 상태
+
+### Week 1 — Baseline & C++ 기초 ① (브랜치 `phase2-week1`)
+
+- [x] Android 기준선 분석 (2026-11-09) — `docs/architecture.md`(구조·데이터 흐름·명령·연결 끊김·테스트 현황·Phase 2 진단), `docs/environment.md`(버전)
+  - 기존 단위 테스트 18개 통과(`./gradlew testDebugUnitTest`). 테스트는 `core.model` 순수 함수만 다룬다. Repository/ViewModel은 DataSource가 구체 클래스 + MAVSDK 타입 반환 + `SystemClock`/`Log` 직접 호출이라 JVM 테스트 불가 → W5/W6에서 필요할 때 interface/Clock 추출 (지금은 안 고침)
+  - 앱의 mavsdk_server는 logcat에 `MAVSDK version: 0.0.0`으로 찍힘 (AAR 빌드에 버전 태그 없음). 버전은 Gradle 좌표 4.1.0으로 관리
+- [ ] C++ 기초 ① — 환경(Apple clang 16, cmake 4.4.4 확인), 컴파일/링크, header/source, const, 참조/포인터, 콘솔 프로그램
+- [ ] 주말 — SITL 연결, Takeoff/Land, Connection Loss 각 3회, C++ 프로그램 빌드·실행
