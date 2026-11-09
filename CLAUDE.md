@@ -161,3 +161,10 @@ python3 tools/mavlink_udp_tcp_bridge.py          # PX4 UDP 14540 <-> TCP 5760
   - `sitl_fault.sh`: px4 클라이언트가 간헐적으로 멈춤 → 5초 timeout + 3회 재시도
   - 버그 수정: 땅에서 Disarm 상태로 끊겨도 "will enter RETURN" 카운트다운을 보여줬음. PX4 failsafe는 Armed일 때만 동작 → 끊기기 직전 Armed=FALSE면 `LinkLossOutlook.Disarmed`("no failsafe expected"). 실기기 확인
 - 명령 "수락"과 "목표 달성"(예: 착지 완료)의 연결은 하지 않기로 함 — PX4가 Flight Mode(HEARTBEAT)와 landed state로 이미 제공하므로 앱이 별도 상태를 만들 필요 없음
+- [x] 완료 조건 — Connection Lost / Telemetry Stale / Low Battery / GPS Lost / Command Failed 모두 앱에서 표현, 실기기 확인. Week4를 main에 ff 머지 (2026-11-09)
+
+**Week 4 핵심 질문 — 답 (실험 근거)**
+1. Telemetry가 끊겼는데 마지막 값을 계속 보여줘도 되는가? → **보여주되 "현재 값"처럼 보이면 안 된다.** 값을 지우면 운용자가 마지막 상태(고도·위치)를 잃으므로 유지하고, 회색 + 수신 시각 + 경과 시간(`Last update 17:36:45 (10s ago)`)으로 과거 값임을 표시. 판단 기준은 연결 여부가 아니라 **필드별 수신 시각** — 연결(HEARTBEAT)은 살아 있는데 위치 스트림만 끊길 수 있음(Scenario 2: CONNECTED인데 Altitude/위경도만 stale)
+2. 마지막 GPS는 현재 위치인가 과거 위치인가? → **과거 위치다.** 게다가 "계속 들어오는 위경도"도 현재 위치라는 보장이 없다: GPS가 꺼져도 EKF 추정치가 계속 와서 stale 판정에 안 걸림(Scenario 3). 그래서 fix 없음/`isGlobalPositionOk == false`면 들어오는 값을 버리고 마지막 GPS 위치를 시각과 함께 고정 표시
+3. Connection Lost와 Drone Lost는 같은 의미인가? → **다르다.** Connection Lost는 "GCS가 기체 상태를 모른다"일 뿐 기체는 계속 비행한다. 브리지만 끊었을 때 앱은 HOLD/Armed(last known)를 보여줬지만 실제 기체는 `NAV_DLL_ACT=2`에 따라 RTL → 착륙·Disarm까지 끝냄. 끊긴 동안 GCS가 할 수 있는 건 기체에 미리 설정된 failsafe로 **예상**하는 것뿐(`LinkLossOutlook`, "Unconfirmed until reconnected"), 확인은 재연결 후
+4. Command가 Timeout이면 Drone이 명령을 수행하지 않은 것인가? → **모른다(응답만 잃었을 수 있다).** PX4 SIGSTOP 중 ARM → 앱 TIMEOUT → SIGCONT 하자 쌓여 있던 명령이 실행돼 Armed TRUE. 그래서 Timeout을 "실패"로 단정하지 않고 Telemetry로 실제 상태를 확인하며, 파라미터 쓰기도 결과와 무관하게 다시 읽어 기체 값으로 판정
