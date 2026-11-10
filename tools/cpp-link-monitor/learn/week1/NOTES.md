@@ -7,7 +7,7 @@
 | 1 | 컴파일과 링크 (`01-compile-link/`) | 완료 (2026-11-10) |
 | 2 | Header / Source 분리 + 일부러 링크 에러 내기 (`02-header-source/`) | 완료 (2026-11-10) |
 | 3 | 변수 / 타입 / `const` (Kotlin `val`/`var` 비교) (`03-types/`) | 완료 (2026-11-10) |
-| 4 | 참조와 포인터 (`04-reference-pointer/`) | 실습 완료 (2026-11-10), 확인 질문 대기 |
+| 4 | 참조와 포인터 (`04-reference-pointer/`) | 실습 완료 (2026-11-10), **확인 질문 2번 대기** |
 | 5 | 콘솔 프로그램 — `DroneWarningPolicy`를 C++로 옮기기 | |
 
 ---
@@ -194,11 +194,18 @@ battery unknown
 | `std:cout` (콜론 1개), `<< *ptr` 누락 | 컴파일 에러 | |
 | `printBattery`에서 `*ptr` 대신 `ptr` 출력 | `-Werror`인데도 **컴파일 성공**, `battery: 0x16b...` 주소 출력 | 주소 출력도 올바른 문법 → 컴파일러는 의도를 모름. **포인터 실수는 실행 결과를 봐야 드러난다** |
 
-### 확인 질문 (답변 대기)
+### 확인 질문
 1. `int* ptr = &battery;` 이후 `ptr`과 `*ptr`은 각각 무엇인가?
 2. 참조가 있는데 포인터가 필요한 이유 하나는? Kotlin과 연결해서.
 
 내 답:
 
--
--
+1. ptr은 주소고 *ptr은 그 값을 가져오라는 것 → **정답**
+2. (아직 이해 안 됨 → 추가 설명 들음, 다음 세션에 답변)
+
+2번 추가 설명 (2026-11-10):
+- Phase 1 `DroneState.gpsAvailable: Boolean?` (null = 모름) 처럼 "아직 값이 없음"을 표현해야 할 때가 있다
+- 참조 `int&`는 만드는 순간 반드시 실제 변수에 붙어야 함 → "없음" 표현 불가
+- 포인터 `int*`는 `nullptr` 가능 = Kotlin `null`. `printBattery(nullptr)` → `battery unknown`이 그 예
+- **다음 세션 시작:** 30초 실험 — `main` 맨 위에 `int* p = nullptr;` / `int& r;` 넣고 컴파일 (r은 에러 예상) → 확인 후 두 줄 삭제 → 빈칸 답하기:
+  "참조와 달리 포인터는 ____을 표현할 수 있다. Kotlin의 ____와 같은 역할이다."
