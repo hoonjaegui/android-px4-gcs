@@ -183,6 +183,7 @@ python3 tools/mavlink_udp_tcp_bridge.py          # PX4 UDP 14540 <-> TCP 5760
   - 앱의 mavsdk_server는 logcat에 `MAVSDK version: 0.0.0`으로 찍힘 (AAR 빌드에 버전 태그 없음). 버전은 Gradle 좌표 4.1.0으로 관리
 - [ ] C++ 기초 ① — 진행 상세·결과는 `tools/cpp-link-monitor/learn/week1/NOTES.md` (단계 1~5 표)
   - 에디터: Cursor + clangd 확장 (learn/에서는 Cursor Tab 끄기 권장). `compile_flags.txt`는 아직 안 만듦(제안만 함)
-  - 1단계 컴파일/링크: 실습 완료 (2026-11-09) — 빈 파일→링크 에러 `_main`, 오타→컴파일 에러, 정상→`.ii` 83,248줄·`nm` T/U·`otool -L`. **다음 세션: 확인 질문 2개 답변 받고 → 2단계(header/source 분리 + 일부러 링크 에러)**
+  - 1단계 컴파일/링크: 완료 (2026-11-10) — 빈 파일→링크 에러 `_main`, 오타→컴파일 에러, 정상→`.ii` 83,248줄·`nm` T/U·`otool -L`. 확인 질문 2개 답변 정답
+  - **다음: 2단계(header/source 분리 + 일부러 링크 에러)**. 사용자는 확인 질문을 바로 이해하지 못했음 → 질문 전에 개념(비유·표·실험 결과 연결)부터 설명
   - 사용자가 코드를 직접 작성, Claude는 설명·리뷰만. 사용자가 설명 줄까지 터미널에 붙여 넣는 일이 있었음 → 명령은 주석 없는 코드 블록으로만 준다
 - [ ] 주말 — SITL 연결, Takeoff/Land, Connection Loss 각 3회, C++ 프로그램 빌드·실행
