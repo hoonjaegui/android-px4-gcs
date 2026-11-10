@@ -4,3 +4,4 @@
 *.s
 build/
 learn/**/hello
+learn/**/battery_check*

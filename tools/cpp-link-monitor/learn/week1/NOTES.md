@@ -5,8 +5,8 @@
 | 단계 | 내용 | 상태 |
 | --- | --- | --- |
 | 1 | 컴파일과 링크 (`01-compile-link/`) | 완료 (2026-11-10) |
-| 2 | Header / Source 분리 + 일부러 링크 에러 내기 | 다음 |
-| 3 | 변수 / 타입 / 함수 / `const` (Kotlin `val`/`var` 비교) | |
+| 2 | Header / Source 분리 + 일부러 링크 에러 내기 (`02-header-source/`) | 실습 완료 (2026-11-10), 확인 질문 대기 |
+| 3 | 변수 / 타입 / 함수 / `const` (Kotlin `val`/`var` 비교) | 다음 |
 | 4 | 참조와 포인터 (값/참조/포인터 전달) | |
 | 5 | 콘솔 프로그램 — `DroneWarningPolicy`를 C++로 옮기기 | |
 
@@ -66,3 +66,45 @@ Android 연결: Phase 1의 `libmavsdk_server.so` 크래시는 `libc++_shared.so`
 피드백:
 - 1 정답. 보충: 컴파일러는 이 파일이 프로그램 전체인지 일부인지 모른다 → `main` 없는 `.cpp`가 보통이라 에러로 볼 수 없다
 - 2 정답. 보충: `.o`에 본문이 아예 없는 게 아니라(`T _main`은 있음) **쓰는 함수 일부의 본문이 `.o` 밖(libc++ 등)에 있어 주소가 빈칸(`U`)**. 링커가 채워야 실행 파일이 된다
+
+---
+
+## 2단계 — Header / Source 분리 (2026-11-10)
+
+| 파일 | 담는 것 | Kotlin 비유 |
+| --- | --- | --- |
+| `battery.h` | `#pragma once` + **선언** `bool isLowBattery(int percent);` | interface의 시그니처 |
+| `battery.cpp` | `#include "battery.h"` + **정의** `{ return percent < 20; }` | 구현 |
+| `main.cpp` | `#include <iostream>`, `#include "battery.h"` 후 호출 | 사용하는 쪽 |
+
+- `#include <...>` 시스템/표준 헤더, `#include "..."` 내 헤더 (현재 폴더부터 찾음)
+- C++은 `타입 이름` 순서: Kotlin `fun f(a: Int): Boolean` ↔ C++ `bool f(int a)`
+
+```bash
+clang++ -std=c++20 -Wall -Wextra -c battery.cpp -o battery.o
+clang++ -std=c++20 -Wall -Wextra -c main.cpp -o main.o
+nm -C battery.o | grep isLowBattery
+nm -C main.o | grep isLowBattery
+clang++ main.o battery.o -o battery_check && ./battery_check
+```
+
+### 실험 결과
+
+| 시도 | 결과 | 배운 것 |
+| --- | --- | --- |
+| 첫 작성: `#pregma once`, `'\n\'` 오타 | `battery.cpp`도 컴파일 실패 (오타는 헤더에만 있었는데) | `#include`가 헤더 텍스트를 붙여 넣으므로 **헤더의 실수는 include한 모든 `.cpp`의 에러**가 된다 |
+| `nm` | `battery.o`: `T isLowBattery(int)` / `main.o`: `U isLowBattery(int)` | 본문이 있는 파일 = T, 선언만 보고 호출한 파일 = U(빈칸) |
+| `main.o + battery.o` 링크 | 실행 `0`, `1` | 링커가 main.o의 U를 battery.o의 T와 연결 |
+| A: `main.o`만 링크 | **링크 에러** `Undefined symbols: "isLowBattery(int)", referenced from: _main in main.o` | U의 짝(T)이 아무 데도 없음. 컴파일은 이미 끝난 상태 |
+| B: `#include "battery.h"` 주석 처리 | **컴파일 에러** (호출하는 줄에서 `isLowBattery` 모름) | 선언이 없으면 컴파일러가 그 이름을 모른다 |
+
+**결론: 선언이 없으면 컴파일 에러, 본문(정의)이 없으면 링크 에러.**
+
+### 확인 질문 (답변 대기)
+1. 실험 A는 링크 에러, 실험 B는 컴파일 에러였다. 각각 무엇이 빠져서, 누가(컴파일러/링커) 잡았나?
+2. 헤더에만 오타가 있었는데 `battery.cpp`까지 컴파일에 실패한 이유는?
+
+내 답:
+
+-
+-
