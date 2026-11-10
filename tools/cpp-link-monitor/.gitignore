@@ -5,3 +5,4 @@
 build/
 learn/**/hello
 learn/**/battery_check*
+learn/**/types

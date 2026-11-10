@@ -6,8 +6,8 @@
 | --- | --- | --- |
 | 1 | 컴파일과 링크 (`01-compile-link/`) | 완료 (2026-11-10) |
 | 2 | Header / Source 분리 + 일부러 링크 에러 내기 (`02-header-source/`) | 완료 (2026-11-10) |
-| 3 | 변수 / 타입 / 함수 / `const` (Kotlin `val`/`var` 비교) | 다음 |
-| 4 | 참조와 포인터 (값/참조/포인터 전달) | |
+| 3 | 변수 / 타입 / `const` (Kotlin `val`/`var` 비교) (`03-types/`) | 완료 (2026-11-10) |
+| 4 | 참조와 포인터 (값/참조/포인터 전달) | 다음 |
 | 5 | 콘솔 프로그램 — `DroneWarningPolicy`를 C++로 옮기기 | |
 
 ---
@@ -112,3 +112,41 @@ clang++ main.o battery.o -o battery_check && ./battery_check
 피드백:
 - 1 정답. 보충: 파일 이름보다 **무엇이** 빠졌는지로 기억 — `.o`가 빠짐 = **본문(T)** 없음 → 링커 / include가 빠짐 = **선언** 없음 → 컴파일러
 - 2 정답
+
+---
+
+## 3단계 — 변수 / 타입 / `const` (2026-11-10)
+
+| Kotlin | C++ | 비고 |
+| --- | --- | --- |
+| `val x: Int = 10` | `const int x = 10;` | 변경 불가 |
+| `var x: Int = 10` | `int x = 10;` | C++은 **기본이 변경 가능** (Kotlin과 반대) |
+| `val x = 10` | `const auto x = 10;` | `auto` = 타입 추론 |
+| `Int` / `Double` / `Boolean` | `int` / `double` / `bool` | |
+| `String` | `std::string` | `#include <string>` |
+
+```bash
+clang++ -std=c++20 -Wall -Wextra main.cpp -o types && ./types
+```
+
+| 코드 | 내 예측 | 결과 | 배운 것 |
+| --- | --- | --- | --- |
+| `int percent = 19.9;` | 19, 경고 | `19`, warning `-Wliteral-conversion` | Kotlin은 에러, C++은 **소수점을 버리고 통과** (경고만) |
+| `int unknown;` 후 출력 | 경고, 값은 `false`? | warning `-Wuninitialized`, 값 `-1693835264` | 초기화 안 한 변수는 **메모리에 남아 있던 쓰레기 값**. Kotlin은 컴파일 에러 |
+| `bool armed = false;` 출력 | | `0` | `bool`은 `cout`으로 `1`/`0` 출력 (`true`/`false`로 보려면 `std::boolalpha`) |
+| 경고 2개 | 2개 | 2개, **실행 파일은 생성됨** | 경고는 빌드를 막지 않는다 |
+
+- 경고 위치: `unknown`은 선언한 9줄이 아니라 **사용한 15줄**에서 경고, note로 `= 0` 초기화 제안
+- 문자열 안 오타(`"percnet::"`)는 컴파일러가 못 잡는다 — 그냥 데이터이므로
+- `-Werror` 추가 → 같은 두 경고가 `error: ... [-Werror,-Wliteral-conversion]`으로 바뀌고 **실행 파일이 안 생김**. 실무에선 경고를 놓치지 않으려고 켠다
+
+### 확인 질문 (2026-11-10 답변)
+1. Kotlin에선 에러인데 C++에선 경고만 나고 통과한 두 가지는?
+2. 경고가 나도 실행 파일이 만들어지는데, 왜 실무에서 경고를 무시하면 안 되나?
+
+내 답:
+
+1. 초기화하지 않은 값이 그냥 넘어간다, 타입이 맞지 않는데도 넘어간다
+2. 덤프값이 들어가면 안 되는 상황이 있기 때문. 따라서 사전에 컴파일 단계에서 막는 게 좋다
+
+피드백: 둘 다 정답. 용어 보충 — "덤프값"이 아니라 **쓰레기 값(garbage value)**. 2번은 `-Werror`가 바로 "컴파일 단계에서 막는" 방법
