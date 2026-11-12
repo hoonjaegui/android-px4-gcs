@@ -186,7 +186,9 @@ python3 tools/mavlink_udp_tcp_bridge.py          # PX4 UDP 14540 <-> TCP 5760
   - 1단계 컴파일/링크: 완료 (2026-11-10) — 빈 파일→링크 에러 `_main`, 오타→컴파일 에러, 정상→`.ii` 83,248줄·`nm` T/U·`otool -L`. 확인 질문 2개 답변 정답
   - 2단계 header/source 분리: 실습 완료 (2026-11-10) — `nm` T/U, 링크 성공, 실험 A(.o 빠짐)=링크 에러·B(include 빠짐)=컴파일 에러. 확인 질문 정답
   - 3단계 변수/타입/const: 완료 (2026-11-10) — 미초기화 변수 쓰레기 값, double→int 절삭, 둘 다 경고만 → `-Werror`로 에러화. 
-  - 4단계 참조/포인터: 실습 완료 (2026-11-10) — 값/참조 전달 40·50·40·40, 포인터 `&`/`*`/`nullptr`, `ptr` 대신 `*ptr` 실수는 `-Werror`로도 안 잡힘. 확인 질문 1번 정답, 2번(포인터가 필요한 이유)은 이해 못 해서 `gpsAvailable: Boolean?` 예로 추가 설명함. **다음 세션: NOTES.md 4단계 끝의 30초 실험(`int& r;` 컴파일 에러) + 2번 빈칸 답 → 5단계(DroneWarningPolicy를 C++로)**
+  - 4단계 참조/포인터: 완료 (2026-11-12) — `int& r;` 컴파일 에러(requires an initializer) 실험, 2번 답(포인터는 "없음" 표현 = Kotlin `null`)은 사용자가 물어봐서 Claude가 알려 줌
+  - 5단계 DroneWarningPolicy → C++ (`05-warning-policy/`): 5-1(`enum class`/`struct`/`std::optional`) 완료, 5-2(header/source 분리 + `assert` 테스트, `!optional` 함정을 테스트가 잡는 실험) 완료, 5-3(필드별 수신 시각 stale, `std::map`/`std::set`) 3번까지. **다음 세션: NOTES.md 5-3 체크리스트 — 철자 `recieved`→`received` 수정 → 테스트 3개 추가 → `>=` 경계값 실험**
   - 사용자가 코드 작성을 어려워해 2단계부터 코드를 주고 직접 타이핑하게 함. 실행 결과는 Claude가 파일·바이너리로 직접 확인(저장 안 됨/`ptr` 대신 `*ptr` 같은 실수를 사용자가 "잘 나왔다"고 넘긴 적 있음). 사용자는 확인 질문을 바로 이해하지 못했음 → 질문 전에 개념(비유·표·실험 결과 연결)부터 설명
   - 사용자가 코드를 직접 작성, Claude는 설명·리뷰만. 사용자가 설명 줄까지 터미널에 붙여 넣는 일이 있었음 → 명령은 주석 없는 코드 블록으로만 준다
+  - 사용자는 컴파일 에러를 끝부분(note)만 붙여 넣는 경향 → Claude가 직접 빌드해서 맨 위 `error:` 줄 확인. "다했다"고 해도 일부 단계만 했을 수 있어 파일로 확인
 - [ ] 주말 — SITL 연결, Takeoff/Land, Connection Loss 각 3회, C++ 프로그램 빌드·실행

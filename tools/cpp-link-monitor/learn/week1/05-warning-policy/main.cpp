@@ -10,18 +10,18 @@ void print(const char* label, const DroneWarningState& w) {
 
 int main() {
     DroneState initial;
-    print("initial", evaluate(initial));
+    print("initial", evaluate(initial, 0));
 
     DroneState lost;
     lost.connection = ConnectionStatus::Lost;
     lost.batteryPercent = 15;
-    print("lost", evaluate(lost));
+    print("lost", evaluate(lost, 0));
 
     DroneState noGps;
     noGps.connection = ConnectionStatus::Connected;
     noGps.batteryPercent = 50;
     noGps.gpsAvailable = false;
-    print("noGps", evaluate(noGps));
+    print("noGps", evaluate(noGps, 0));
 
     return 0;
 }

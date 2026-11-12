@@ -2,12 +2,12 @@
 
 void drain(int p) {
     p = p -10;
-    std::cout << " inside drain " << p << '\n';
+    std::cout << " inside drain: " << p << '\n';
 }
 
 void drainRef(int& p) {
     p = p - 10;
-    std::cout << " insdide drainRef " << p << '\n';
+    std::cout << " insdide drainRef: " << p << '\n';
 }
 
 int main() {
