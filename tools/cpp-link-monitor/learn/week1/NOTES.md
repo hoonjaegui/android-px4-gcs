@@ -7,7 +7,7 @@
 | 1 | 컴파일과 링크 (`01-compile-link/`) | 완료 (2026-11-10) |
 | 2 | Header / Source 분리 + 일부러 링크 에러 내기 (`02-header-source/`) | 완료 (2026-11-10) |
 | 3 | 변수 / 타입 / `const` (Kotlin `val`/`var` 비교) (`03-types/`) | 완료 (2026-11-10) |
-| 4 | 참조와 포인터 (`04-reference-pointer/`) | 실습 완료 (2026-11-10), **확인 질문 2번 대기** |
+| 4 | 참조와 포인터 (`04-reference-pointer/`) | 완료 (2026-11-12) |
 | 5 | 콘솔 프로그램 — `DroneWarningPolicy`를 C++로 옮기기 | |
 
 ---
@@ -201,7 +201,7 @@ battery unknown
 내 답:
 
 1. ptr은 주소고 *ptr은 그 값을 가져오라는 것 → **정답**
-2. (아직 이해 안 됨 → 추가 설명 들음, 다음 세션에 답변)
+2. 사용자가 답을 물어봐서 Claude가 알려 줌 (2026-11-12): 참조와 달리 포인터는 **"없음"**을 표현할 수 있다. Kotlin의 **`null`**과 같은 역할
 
 2번 추가 설명 (2026-11-10):
 - Phase 1 `DroneState.gpsAvailable: Boolean?` (null = 모름) 처럼 "아직 값이 없음"을 표현해야 할 때가 있다
@@ -209,3 +209,9 @@ battery unknown
 - 포인터 `int*`는 `nullptr` 가능 = Kotlin `null`. `printBattery(nullptr)` → `battery unknown`이 그 예
 - **다음 세션 시작:** 30초 실험 — `main` 맨 위에 `int* p = nullptr;` / `int& r;` 넣고 컴파일 (r은 에러 예상) → 확인 후 두 줄 삭제 → 빈칸 답하기:
   "참조와 달리 포인터는 ____을 표현할 수 있다. Kotlin의 ____와 같은 역할이다."
+
+30초 실험 결과 (2026-11-12): `int* p = nullptr;`는 통과, `int& r;`는 컴파일 에러
+```
+pointer.cpp:13:10: error: declaration of reference variable 'r' requires an initializer
+```
+→ 참조는 만들 때 붙일 변수가 반드시 있어야 함. "값 없음"만 필요하면 요즘 C++은 `std::optional<T>`도 씀 (5단계에서 사용)
