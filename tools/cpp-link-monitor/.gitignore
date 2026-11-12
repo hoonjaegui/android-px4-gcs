@@ -8,3 +8,4 @@ learn/**/battery_check*
 learn/**/types
 learn/**/refptr
 learn/**/pointer
+learn/**/warning

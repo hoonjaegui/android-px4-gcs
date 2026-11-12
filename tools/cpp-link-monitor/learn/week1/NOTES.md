@@ -8,7 +8,7 @@
 | 2 | Header / Source 분리 + 일부러 링크 에러 내기 (`02-header-source/`) | 완료 (2026-11-10) |
 | 3 | 변수 / 타입 / `const` (Kotlin `val`/`var` 비교) (`03-types/`) | 완료 (2026-11-10) |
 | 4 | 참조와 포인터 (`04-reference-pointer/`) | 완료 (2026-11-12) |
-| 5 | 콘솔 프로그램 — `DroneWarningPolicy`를 C++로 옮기기 | |
+| 5 | 콘솔 프로그램 — `DroneWarningPolicy`를 C++로 옮기기 (`05-warning-policy/`) | 5-1 완료 (2026-11-12), 5-2·5-3 남음 |
 
 ---
 
@@ -215,3 +215,30 @@ battery unknown
 pointer.cpp:13:10: error: declaration of reference variable 'r' requires an initializer
 ```
 → 참조는 만들 때 붙일 변수가 반드시 있어야 함. "값 없음"만 필요하면 요즘 C++은 `std::optional<T>`도 씀 (5단계에서 사용)
+
+---
+
+## 5단계 — `DroneWarningPolicy`를 C++로 (2026-11-12)
+
+원본: `app/.../core/model/DroneWarnings.kt`. 세 조각으로 나눔: 5-1 경고 3개 / 5-2 header·source 분리 + `assert` 테스트 / 5-3 필드별 수신 시각으로 stale 판정
+
+### 5-1: 연결 끊김 / GPS 없음 / 배터리 부족 (`main.cpp`)
+
+| Kotlin | C++ |
+| --- | --- |
+| `enum class ConnectionStatus { SEARCHING, ... }` | `enum class ConnectionStatus { Searching, ... };`, 사용은 `ConnectionStatus::Lost` |
+| `data class DroneState(...)` | `struct DroneState { ... };` |
+| `Int?` / `Boolean?` | `std::optional<int>` / `std::optional<bool>` (비어 있으면 = 모름) |
+| `x?.let { it < 20 } ?: false` | `x.has_value() && *x < 20` |
+| `gpsAvailable == false` | 똑같음. 비어 있는 optional은 어떤 값과도 `==`가 false |
+
+- 함정: `if (!state.gpsAvailable)`는 "GPS 없음"이 아니라 **"모름(비어 있음)"**. 컴파일 경고도 없음
+- 4단계 연결: `const DroneState&`(복사 피함), `const char* label`(문자열 리터럴은 포인터)
+
+예측 (initial F/F/F, lost T/F/T, noGps F/T/F) 전부 정답, 실행 일치:
+```
+initial: lost=false gpsUnavailable=false lowBattery=false
+lost: lost=true gpsUnavailable=false lowBattery=true
+noGps: lost=false gpsUnavailable=true lowBattery=false
+```
+"optional은 true도 false도 아닌데 어떻게 비교하나?" 질문 → 위 표의 `==` 규칙으로 설명
