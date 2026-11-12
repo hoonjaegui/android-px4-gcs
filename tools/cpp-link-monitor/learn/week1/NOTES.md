@@ -8,7 +8,7 @@
 | 2 | Header / Source 분리 + 일부러 링크 에러 내기 (`02-header-source/`) | 완료 (2026-11-10) |
 | 3 | 변수 / 타입 / `const` (Kotlin `val`/`var` 비교) (`03-types/`) | 완료 (2026-11-10) |
 | 4 | 참조와 포인터 (`04-reference-pointer/`) | 완료 (2026-11-12) |
-| 5 | 콘솔 프로그램 — `DroneWarningPolicy`를 C++로 옮기기 (`05-warning-policy/`) | 5-1 완료 (2026-11-12), 5-2·5-3 남음 |
+| 5 | 콘솔 프로그램 — `DroneWarningPolicy`를 C++로 옮기기 (`05-warning-policy/`) | 5-1·5-2 완료 (2026-11-12), 5-3 남음 |
 
 ---
 
@@ -242,3 +242,20 @@ lost: lost=true gpsUnavailable=false lowBattery=true
 noGps: lost=false gpsUnavailable=true lowBattery=false
 ```
 "optional은 true도 false도 아닌데 어떻게 비교하나?" 질문 → 위 표의 `==` 규칙으로 설명
+함정 실험 (`!state.gpsAvailable`로 바꿔 실행): `initial gpsUnavailable=true`, `noGps gpsUnavailable=false` — **완전히 반대**, `-Werror`로도 컴파일 통과
+
+### 5-2: header/source 분리 + `assert` 테스트
+
+```
+warning_policy.h / .cpp  ← enum·struct·상수·선언 / evaluate 본문
+main.cpp                + warning_policy.cpp → warning       (앱 역할)
+warning_policy_test.cpp + warning_policy.cpp → warning_test  (테스트 역할)
+```
+
+| Kotlin (JUnit) | C++ |
+| --- | --- |
+| `assertTrue(x)` / `assertFalse(x)` | `assert(x)` / `assert(!x)` (`<cassert>`) |
+| 실패 리포트 | 실패한 자리에서 프로그램 종료, 파일·줄·조건 출력 |
+| `null` | `std::nullopt` |
+
+Kotlin 테스트 4개 옮김 (searching / lost / gps unknown / low battery 경계값 20·19). 실행 결과 `all tests passed`, Claude가 다시 빌드해 확인

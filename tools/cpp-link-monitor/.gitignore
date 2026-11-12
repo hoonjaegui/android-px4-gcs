@@ -9,3 +9,4 @@ learn/**/types
 learn/**/refptr
 learn/**/pointer
 learn/**/warning
+learn/**/warning_test

@@ -1,29 +1,5 @@
 #include <iostream>
-#include <optional>
-
-enum class ConnectionStatus { Searching, Connected, Lost };
-
-struct DroneState {
-    ConnectionStatus connection = ConnectionStatus::Searching;
-    std::optional<int> batteryPercent;
-    std::optional<bool> gpsAvailable;
-};
-
-struct DroneWarningState {
-    bool connectionLost = false;
-    bool gpsUnavailable = false;
-    bool lowBattery = false;
-};
-
-constexpr int kLowBatteryPercent = 20;
-
-DroneWarningState evaluate(const DroneState& state) {
-    DroneWarningState w;
-    w.connectionLost = state.connection == ConnectionStatus::Lost;
-    w.gpsUnavailable = state.gpsAvailable == false;
-    w.lowBattery = state.batteryPercent.has_value() && *state.batteryPercent < kLowBatteryPercent;
-    return w;
-}
+#include "warning_policy.h"
 
 void print(const char* label, const DroneWarningState& w) {
     std::cout << std::boolalpha << label
