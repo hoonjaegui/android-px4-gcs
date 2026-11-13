@@ -191,4 +191,6 @@ python3 tools/mavlink_udp_tcp_bridge.py          # PX4 UDP 14540 <-> TCP 5760
   - 사용자가 코드 작성을 어려워해 2단계부터 코드를 주고 직접 타이핑하게 함. 실행 결과는 Claude가 파일·바이너리로 직접 확인(저장 안 됨/`ptr` 대신 `*ptr` 같은 실수를 사용자가 "잘 나왔다"고 넘긴 적 있음). 사용자는 확인 질문을 바로 이해하지 못했음 → 질문 전에 개념(비유·표·실험 결과 연결)부터 설명
   - 사용자가 코드를 직접 작성, Claude는 설명·리뷰만. 사용자가 설명 줄까지 터미널에 붙여 넣는 일이 있었음 → 명령은 주석 없는 코드 블록으로만 준다
   - 사용자는 컴파일 에러를 끝부분(note)만 붙여 넣는 경향 → Claude가 직접 빌드해서 맨 위 `error:` 줄 확인. "다했다"고 해도 일부 단계만 했을 수 있어 파일로 확인
-- [ ] 주말 — SITL 연결, Takeoff/Land, Connection Loss 각 3회, C++ 프로그램 빌드·실행
+- [x] 주말 검증 (2026-11-13) — 상세 `docs/verification/phase2-week1-weekend.md`
+  - 실기기 SITL 연결, Takeoff/Land 3/3, Connection Loss(`NAV_DLL_ACT=2`, link-cut → RTL·착지·Disarm → 재연결 시 실제 상태 반영) 3/3, C++ `-Werror` 클린 빌드·테스트 7개 통과
+  - 발견: 착지 후 Altitude `-0.0m` 표시 (평일 작업 후보). 이전 세션 파라미터(`SYS_FAILURE_EN 1`, `NAV_DLL_ACT 1`)가 남아 있었음 → 원복, 실험 뒤 `sitl_fault.sh status` 확인
