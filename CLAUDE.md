@@ -181,13 +181,13 @@ python3 tools/mavlink_udp_tcp_bridge.py          # PX4 UDP 14540 <-> TCP 5760
 - [x] Android 기준선 분석 (2026-11-09) — `docs/architecture.md`(구조·데이터 흐름·명령·연결 끊김·테스트 현황·Phase 2 진단), `docs/environment.md`(버전)
   - 기존 단위 테스트 18개 통과(`./gradlew testDebugUnitTest`). 테스트는 `core.model` 순수 함수만 다룬다. Repository/ViewModel은 DataSource가 구체 클래스 + MAVSDK 타입 반환 + `SystemClock`/`Log` 직접 호출이라 JVM 테스트 불가 → W5/W6에서 필요할 때 interface/Clock 추출 (지금은 안 고침)
   - 앱의 mavsdk_server는 logcat에 `MAVSDK version: 0.0.0`으로 찍힘 (AAR 빌드에 버전 태그 없음). 버전은 Gradle 좌표 4.1.0으로 관리
-- [ ] C++ 기초 ① — 진행 상세·결과는 `tools/cpp-link-monitor/learn/week1/NOTES.md` (단계 1~5 표)
+- [x] C++ 기초 ① (2026-11-13) — 진행 상세·결과는 `tools/cpp-link-monitor/learn/week1/NOTES.md` (단계 1~5 표)
   - 에디터: Cursor + clangd 확장 (learn/에서는 Cursor Tab 끄기 권장). `compile_flags.txt`는 아직 안 만듦(제안만 함)
   - 1단계 컴파일/링크: 완료 (2026-11-10) — 빈 파일→링크 에러 `_main`, 오타→컴파일 에러, 정상→`.ii` 83,248줄·`nm` T/U·`otool -L`. 확인 질문 2개 답변 정답
   - 2단계 header/source 분리: 실습 완료 (2026-11-10) — `nm` T/U, 링크 성공, 실험 A(.o 빠짐)=링크 에러·B(include 빠짐)=컴파일 에러. 확인 질문 정답
   - 3단계 변수/타입/const: 완료 (2026-11-10) — 미초기화 변수 쓰레기 값, double→int 절삭, 둘 다 경고만 → `-Werror`로 에러화. 
   - 4단계 참조/포인터: 완료 (2026-11-12) — `int& r;` 컴파일 에러(requires an initializer) 실험, 2번 답(포인터는 "없음" 표현 = Kotlin `null`)은 사용자가 물어봐서 Claude가 알려 줌
-  - 5단계 DroneWarningPolicy → C++ (`05-warning-policy/`): 5-1(`enum class`/`struct`/`std::optional`) 완료, 5-2(header/source 분리 + `assert` 테스트, `!optional` 함정을 테스트가 잡는 실험) 완료, 5-3(필드별 수신 시각 stale, `std::map`/`std::set`) 3번까지. **다음 세션: NOTES.md 5-3 체크리스트 — 철자 `recieved`→`received` 수정 → 테스트 3개 추가 → `>=` 경계값 실험**
+  - 5단계 DroneWarningPolicy → C++ (`05-warning-policy/`): 5-1(`enum class`/`struct`/`std::optional`), 5-2(header/source 분리 + `assert` 테스트, `!optional` 함정을 테스트가 잡는 실험), 5-3(필드별 수신 시각 stale, `std::map`/`std::set`, 테스트 7개 통과, `>`→`>=` 경계값 실험: 3000ms 정확히 그 값의 assert만 잡음) 완료 (2026-11-13)
   - 사용자가 코드 작성을 어려워해 2단계부터 코드를 주고 직접 타이핑하게 함. 실행 결과는 Claude가 파일·바이너리로 직접 확인(저장 안 됨/`ptr` 대신 `*ptr` 같은 실수를 사용자가 "잘 나왔다"고 넘긴 적 있음). 사용자는 확인 질문을 바로 이해하지 못했음 → 질문 전에 개념(비유·표·실험 결과 연결)부터 설명
   - 사용자가 코드를 직접 작성, Claude는 설명·리뷰만. 사용자가 설명 줄까지 터미널에 붙여 넣는 일이 있었음 → 명령은 주석 없는 코드 블록으로만 준다
   - 사용자는 컴파일 에러를 끝부분(note)만 붙여 넣는 경향 → Claude가 직접 빌드해서 맨 위 `error:` 줄 확인. "다했다"고 해도 일부 단계만 했을 수 있어 파일로 확인

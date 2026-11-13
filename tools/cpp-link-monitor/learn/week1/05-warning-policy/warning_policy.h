@@ -12,7 +12,7 @@ struct DroneState {
     ConnectionStatus connection = ConnectionStatus::Searching;
     std::optional<int> batteryPercent;
     std::optional<bool> gpsAvailable;
-    std::map<TelemetryField, std::int64_t> recievedAtMs;
+    std::map<TelemetryField, std::int64_t> receivedAtMs;
 };
 
 struct DroneWarningState {

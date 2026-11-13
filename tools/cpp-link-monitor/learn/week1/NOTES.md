@@ -8,7 +8,7 @@
 | 2 | Header / Source 분리 + 일부러 링크 에러 내기 (`02-header-source/`) | 완료 (2026-11-10) |
 | 3 | 변수 / 타입 / `const` (Kotlin `val`/`var` 비교) (`03-types/`) | 완료 (2026-11-10) |
 | 4 | 참조와 포인터 (`04-reference-pointer/`) | 완료 (2026-11-12) |
-| 5 | 콘솔 프로그램 — `DroneWarningPolicy`를 C++로 옮기기 (`05-warning-policy/`) | 5-1·5-2 완료, 5-3 진행 중 (2026-11-12) |
+| 5 | 콘솔 프로그램 — `DroneWarningPolicy`를 C++로 옮기기 (`05-warning-policy/`) | 완료 (2026-11-13) |
 
 ---
 
@@ -264,7 +264,7 @@ Kotlin 테스트 4개 옮김 (searching / lost / gps unknown / low battery 경�
 - C++ `assert`는 실패 즉시 **프로그램 전체 종료** → 24번 줄·4번째 테스트는 실행 안 됨 (JUnit은 나머지 테스트 계속 실행 후 요약). 실무에선 GoogleTest
 - `!optional`은 "GPS 값이 false인가?"가 아니라 "값을 받았는가?"라는 **다른 질문**. 문법상 정상이라 컴파일러는 못 잡고 테스트만 잡음
 
-### 5-3: 필드별 수신 시각으로 stale 판정 (진행 중)
+### 5-3: 필드별 수신 시각으로 stale 판정 (2026-11-13 완료)
 
 Kotlin `receivedAt.filterValues { now - it.elapsedMs > STALE_AFTER_MS }.keys` → C++ `for (const auto& [field, receivedAt] : state.receivedAtMs)` + `if` + `staleFields.insert(field)`. `Timestamp` 대신 경과 ms 숫자(`std::int64_t`) 하나만. `telemetryStale`은 범위 밖
 
@@ -279,6 +279,14 @@ Kotlin `receivedAt.filterValues { now - it.elapsedMs > STALE_AFTER_MS }.keys` �
 - [x] 1~2. header에 `TelemetryField`·`receivedAtMs`·`staleFields`·`kStaleAfterMs`, `evaluate(state, nowMs)` + 반복문
   - 오타 `std::Map` → `error: no template named 'Map' in namespace 'std'; did you mean 'map'?` (붙여 넣은 건 끝의 note 줄이었음 → **에러는 맨 위 `error:` 줄부터**). 헤더 오타라 include한 .cpp 2개에서 같은 에러 두 번
 - [x] 3. 시그니처 변경 → 호출부 `evaluate(state, 0)`로 수정, 기존 테스트 `all tests passed`, main 출력 동일 (Claude 확인)
-- [ ] **다음 세션 시작:** 철자 `recievedAtMs`/`recievedAt` → `receivedAtMs`/`receivedAt` (h 15번 줄, cpp 9~10번 줄. 아직 안 고쳐짐 — 테스트 코드가 `receivedAtMs`를 써서 안 고치면 컴파일 에러)
-- [ ] 4. 테스트 3개 추가 (`fieldBecomesStaleOnlyAfterThreshold`, `neverReceivedFieldIsNotStale`, `staleDataWhileDisconnectedIsStillStale`, `kOnlyPosition`) + main에서 호출. 코드는 이전 세션 대화에 있음 → 다음 세션에서 다시 제시
-- [ ] 5. 빌드·실행 → `>`를 `>=`로 바꾸는 경계값 실험 (예상: `fieldBecomesStaleOnlyAfterThreshold` 첫 assert `staleFields.empty()` 실패) → 원복
+- [x] 철자 `recievedAtMs` → `receivedAtMs` (h, cpp)
+- [x] 4. 테스트 3개 추가 (`fieldBecomeStaleOnlyAfterThreshold`, `neverReceivedFieldIsNotStale`, `staleDataWhileDisconnectedIsStillStale`, 비교용 `kOnlyPosition`) → `all tests passed` (Claude 확인)
+  - 62번 줄 `;` 빠짐 → `error: type 'DroneWarningState' does not provide a call operator`. 줄바꿈은 문장 끝이 아니고, 다음 줄 `assert(...)`가 매크로라 `( ... )`로 펼쳐져 `evaluate(...)( ... )` = 반환값을 함수처럼 호출한 것으로 읽힘 → **이상한 에러면 앞 줄 `;`부터 의심**
+| Kotlin | C++ |
+| --- | --- |
+| `setOf(POSITION)` | `std::set<TelemetryField>{TelemetryField::Position}` |
+| `assertEquals(setA, setB)` | `assert(setA == setB)` (`std::set`은 `==`로 내용 비교) |
+| `map[k] = v` | `map[k] = v` (같음) |
+- [x] 5. 경계값 실험 `>` → `>=`: 47번 줄 `assert(evaluate(state, 1000 + kStaleAfterMs).staleFields.empty())`에서 abort (exit 134), 뒤 테스트 2개는 실행 안 됨 → `>`로 원복, `all tests passed`
+  - 사용자 예측 "48번 줄"은 오답 → `>`/`>=`가 다른 결과를 내는 건 **경계 그 값(정확히 3000ms)** 하나뿐. 3001ms(48번)는 둘 다 stale이라 못 잡음. 경계값 테스트는 "경계 그 값 + 바로 다음 값"을 짝으로
+  - 사용자 예측 "`>` 때문에 3000ms는 stale 아님"은 정답 → "3초가 **지나면** stale"
