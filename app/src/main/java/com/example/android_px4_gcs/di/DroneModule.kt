@@ -2,7 +2,9 @@ package com.example.android_px4_gcs.di
 
 import com.example.android_px4_gcs.BuildConfig
 import com.example.android_px4_gcs.data.drone.DefaultDroneRepository
+import com.example.android_px4_gcs.data.mission.InMemoryMissionPlanRepository
 import com.example.android_px4_gcs.domain.drone.DroneRepository
+import com.example.android_px4_gcs.domain.mission.MissionPlanRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -41,4 +43,11 @@ object AppModule {
 abstract class DroneModule {
     @Binds
     abstract fun bindDroneRepository(impl: DefaultDroneRepository): DroneRepository
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class MissionModule {
+    @Binds
+    abstract fun bindMissionPlanRepository(impl: InMemoryMissionPlanRepository): MissionPlanRepository
 }
