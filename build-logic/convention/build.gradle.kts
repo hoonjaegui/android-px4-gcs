@@ -54,6 +54,14 @@ gradlePlugin {
             id = libs.plugins.px4gcs.jvm.library.get().pluginId
             implementationClass = "JvmLibraryConventionPlugin"
         }
+        register("androidFeatureApi") {
+            id = libs.plugins.px4gcs.android.feature.api.get().pluginId
+            implementationClass = "AndroidFeatureApiConventionPlugin"
+        }
+        register("androidFeatureImpl") {
+            id = libs.plugins.px4gcs.android.feature.impl.get().pluginId
+            implementationClass = "AndroidFeatureImplConventionPlugin"
+        }
         register("hilt") {
             id = libs.plugins.px4gcs.hilt.get().pluginId
             implementationClass = "HiltConventionPlugin"

@@ -17,8 +17,9 @@ import io.github.hoonjaegui.px4gcs.core.navigation.NavigationState
 import io.github.hoonjaegui.px4gcs.core.navigation.Navigator
 import io.github.hoonjaegui.px4gcs.core.navigation.rememberNavigationState
 import io.github.hoonjaegui.px4gcs.core.navigation.toEntries
-import io.github.hoonjaegui.px4gcs.feature.dashboard.DashboardRoute
-import io.github.hoonjaegui.px4gcs.feature.mission.MissionPlannerRoute
+import io.github.hoonjaegui.px4gcs.feature.dashboard.api.DashboardNavKey
+import io.github.hoonjaegui.px4gcs.feature.dashboard.impl.navigation.dashboardEntry
+import io.github.hoonjaegui.px4gcs.feature.mission.impl.navigation.missionPlannerEntry
 
 /**
  * 앱 전체 화면 구성: 하단 탭 + NavDisplay (Navigation 3, NIA 방식).
@@ -35,12 +36,10 @@ fun GcsNavGraph() {
     )
     val navigator = remember(navigationState) { Navigator(navigationState) }
 
+    // 각 feature가 자기 화면을 등록한다. app은 feature impl의 내부(Route, ViewModel)를 모른다.
     val entryProvider = entryProvider {
-        /** 기체 상태 / 명령 / 장애 표시 (Phase 1). */
-        entry<DashboardNavKey> { DashboardRoute() }
-
-        /** Mission 편집. 업로드/실행은 Week 3. */
-        entry<MissionPlannerNavKey> { MissionPlannerRoute() }
+        dashboardEntry()
+        missionPlannerEntry()
     }
 
     Scaffold(

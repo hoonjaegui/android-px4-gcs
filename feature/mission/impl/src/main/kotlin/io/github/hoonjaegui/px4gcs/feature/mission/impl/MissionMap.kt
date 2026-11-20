@@ -1,4 +1,4 @@
-package io.github.hoonjaegui.px4gcs.feature.mission
+package io.github.hoonjaegui.px4gcs.feature.mission.impl
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -18,6 +18,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import io.github.hoonjaegui.px4gcs.core.model.drone.VehiclePosition
 import io.github.hoonjaegui.px4gcs.core.model.mission.Waypoint
+import org.maplibre.android.MapLibre
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
@@ -71,6 +72,8 @@ fun MissionMap(
     var cameraPlaced by remember { mutableStateOf(false) }
 
     val mapView = remember {
+        // MapView를 만들기 전에 한 번 초기화해야 한다(싱글턴이라 여러 번 불러도 됨). 타일은 키가 필요 없는 OpenFreeMap.
+        MapLibre.getInstance(context.applicationContext)
         MapView(context).apply {
             getMapAsync { m ->
                 map = m

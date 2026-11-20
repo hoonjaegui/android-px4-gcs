@@ -1,4 +1,4 @@
-package io.github.hoonjaegui.px4gcs.feature.dashboard
+package io.github.hoonjaegui.px4gcs.feature.dashboard.impl
 
 import io.github.hoonjaegui.px4gcs.core.model.drone.CommandFailureReason
 

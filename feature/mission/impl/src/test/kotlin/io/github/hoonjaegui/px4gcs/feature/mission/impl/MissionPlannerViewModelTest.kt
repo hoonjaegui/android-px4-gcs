@@ -1,4 +1,4 @@
-package io.github.hoonjaegui.px4gcs.feature.mission
+package io.github.hoonjaegui.px4gcs.feature.mission.impl
 
 import io.github.hoonjaegui.px4gcs.core.domain.drone.ObserveVehiclePositionUseCase
 import io.github.hoonjaegui.px4gcs.core.domain.mission.AddWaypointUseCase

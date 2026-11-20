@@ -39,24 +39,24 @@ android {
 }
 
 dependencies {
-    implementation(projects.core.common)
-    implementation(projects.core.domain)
+    // 화면 (feature): app은 api(NavKey)와 impl(EntryProvider)만 조립한다
+    implementation(projects.feature.dashboard.api)
+    implementation(projects.feature.dashboard.impl)
+    implementation(projects.feature.mission.api)
+    implementation(projects.feature.mission.impl)
+
+    // 구현 (data): Hilt 바인딩을 앱 그래프에 포함시키기 위해 필요
     implementation(projects.core.data.drone)
     implementation(projects.core.data.mission)
+
+    implementation(projects.core.common) // Clock (AndroidClock 제공)
     implementation(projects.core.designsystem)
-    implementation(projects.core.model)
     implementation(projects.core.navigation)
+
     implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation(libs.androidx.lifecycle.runtime.compose)
-    implementation(libs.hilt.navigation.compose)
     implementation(libs.androidx.navigation3.ui)
-    implementation(libs.maplibre.android.sdk)
+
     testImplementation(projects.core.testing)
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)

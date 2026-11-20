@@ -35,4 +35,8 @@ include(":core:designsystem")
 include(":core:navigation")
 include(":core:data:drone")
 include(":core:data:mission")
+include(":feature:dashboard:api")
+include(":feature:dashboard:impl")
+include(":feature:mission:api")
+include(":feature:mission:impl")
  
