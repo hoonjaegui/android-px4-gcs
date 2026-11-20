@@ -7,6 +7,8 @@ import com.example.android_px4_gcs.core.mission.MissionValidationError
 import com.example.android_px4_gcs.core.mission.MissionValidator
 import com.example.android_px4_gcs.core.mission.Waypoint
 import com.example.android_px4_gcs.core.mission.WaypointProblem
+import com.example.android_px4_gcs.core.model.DroneState
+import com.example.android_px4_gcs.domain.drone.DroneRepository
 import com.example.android_px4_gcs.domain.mission.MissionPlanRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -14,6 +16,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 data class MissionPlannerUiState(
@@ -22,8 +26,21 @@ data class MissionPlannerUiState(
     val errors: List<MissionValidationError> = listOf(MissionValidationError.Empty),
     /** 마지막 편집이 거부된 이유. 다음 편집이 성공하면 사라진다. */
     val rejection: EditRejection? = null,
+    /** 지도에 표시할 기체 위치. 한 번도 신뢰할 수 있는 위치를 못 받았으면 null. */
+    val vehicle: VehicleMarker? = null,
 ) {
     val isValid: Boolean get() = errors.isEmpty()
+}
+
+/**
+ * @property current false = 마지막으로 알던 위치(연결 끊김 또는 GPS/EKF 불신). 지도에서 현재 위치처럼 보이면 안 된다.
+ */
+data class VehicleMarker(val latitudeDeg: Double, val longitudeDeg: Double, val current: Boolean)
+
+internal fun DroneState.toVehicleMarker(): VehicleMarker? {
+    val lat = latitude ?: return null
+    val lon = longitude ?: return null
+    return VehicleMarker(lat, lon, current = isConnected && positionTrusted)
 }
 
 /** 편집 요청을 plan에 반영하지 않은 이유. */
@@ -45,13 +62,16 @@ sealed interface EditRejection {
 @HiltViewModel
 class MissionPlannerViewModel @Inject constructor(
     private val repository: MissionPlanRepository,
+    droneRepository: DroneRepository,
 ) : ViewModel() {
 
     private val rejection = MutableStateFlow<EditRejection?>(null)
 
+    private val vehicle = droneRepository.droneState.map { it.toVehicleMarker() }.distinctUntilChanged()
+
     val uiState: StateFlow<MissionPlannerUiState> =
-        combine(repository.plan, rejection) { plan, rejection ->
-            MissionPlannerUiState(plan, MissionValidator.validate(plan), rejection)
+        combine(repository.plan, rejection, vehicle) { plan, rejection, vehicle ->
+            MissionPlannerUiState(plan, MissionValidator.validate(plan), rejection, vehicle)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MissionPlannerUiState())
 
     private val plan: MissionPlan get() = repository.plan.value

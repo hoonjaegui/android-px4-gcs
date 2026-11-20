@@ -1,9 +1,12 @@
 package com.example.android_px4_gcs.feature.mission
 
+import com.example.android_px4_gcs.core.model.ConnectionStatus
+import com.example.android_px4_gcs.core.model.DroneState
 import com.example.android_px4_gcs.core.mission.MissionPlan
 import com.example.android_px4_gcs.core.mission.MissionValidationError
 import com.example.android_px4_gcs.core.mission.Waypoint
 import com.example.android_px4_gcs.core.mission.WaypointProblem
+import com.example.android_px4_gcs.testing.FakeDroneRepository
 import com.example.android_px4_gcs.testing.FakeMissionPlanRepository
 import com.example.android_px4_gcs.testing.MainDispatcherRule
 import kotlinx.coroutines.flow.collect
@@ -38,7 +41,7 @@ class MissionPlannerViewModelTest {
 
     private fun TestScope.setUp(initial: MissionPlan = MissionPlan()): Pair<MissionPlannerViewModel, FakeMissionPlanRepository> {
         val repository = FakeMissionPlanRepository(initial)
-        val viewModel = MissionPlannerViewModel(repository)
+        val viewModel = MissionPlannerViewModel(repository, FakeDroneRepository())
         subscribe(viewModel)
         return viewModel to repository
     }
@@ -152,11 +155,56 @@ class MissionPlannerViewModelTest {
     fun `plan survives a new ViewModel`() = runTest {
         // 화면을 나갔다 들어오면 ViewModel은 새로 만들어지지만 Repository는 Singleton이라 그대로
         val repository = FakeMissionPlanRepository()
-        MissionPlannerViewModel(repository).onAddWaypoint(47.3977, 8.5455)
+        MissionPlannerViewModel(repository, FakeDroneRepository()).onAddWaypoint(47.3977, 8.5455)
 
-        val next = MissionPlannerViewModel(repository)
+        val next = MissionPlannerViewModel(repository, FakeDroneRepository())
         subscribe(next)
 
         assertEquals(1, next.uiState.value.plan.size)
+    }
+
+    // --- 기체 위치 (지도 마커) ---
+
+    private fun TestScope.setUpWithDrone(drone: FakeDroneRepository): MissionPlannerViewModel =
+        MissionPlannerViewModel(FakeMissionPlanRepository(), drone).also { subscribe(it) }
+
+    @Test
+    fun `no vehicle marker before any position`() = runTest {
+        val viewModel = setUpWithDrone(FakeDroneRepository(DroneState(connection = ConnectionStatus.CONNECTED)))
+        assertNull(viewModel.uiState.value.vehicle)
+    }
+
+    @Test
+    fun `connected with trusted position is current`() = runTest {
+        val drone = FakeDroneRepository(
+            DroneState(connection = ConnectionStatus.CONNECTED, latitude = 47.3977, longitude = 8.5455),
+        )
+        val viewModel = setUpWithDrone(drone)
+        assertEquals(VehicleMarker(47.3977, 8.5455, current = true), viewModel.uiState.value.vehicle)
+    }
+
+    @Test
+    fun `link lost keeps last position but not current`() = runTest {
+        val drone = FakeDroneRepository(
+            DroneState(connection = ConnectionStatus.CONNECTED, latitude = 47.3977, longitude = 8.5455),
+        )
+        val viewModel = setUpWithDrone(drone)
+
+        drone.droneState.value = drone.droneState.value.copy(connection = ConnectionStatus.LOST)
+
+        assertEquals(VehicleMarker(47.3977, 8.5455, current = false), viewModel.uiState.value.vehicle)
+    }
+
+    @Test
+    fun `gps lost while connected is not current`() = runTest {
+        val drone = FakeDroneRepository(
+            DroneState(
+                connection = ConnectionStatus.CONNECTED,
+                latitude = 47.3977,
+                longitude = 8.5455,
+                gpsAvailable = false,
+            ),
+        )
+        assertFalse(setUpWithDrone(drone).uiState.value.vehicle!!.current)
     }
 }
