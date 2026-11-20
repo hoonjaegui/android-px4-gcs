@@ -1,4 +1,12 @@
-package io.github.hoonjaegui.px4gcs.core.model
+package io.github.hoonjaegui.px4gcs.core.domain.drone
+
+import io.github.hoonjaegui.px4gcs.core.model.drone.ConnectionStatus
+import io.github.hoonjaegui.px4gcs.core.model.drone.DroneState
+import io.github.hoonjaegui.px4gcs.core.model.drone.LinkLossAction
+import io.github.hoonjaegui.px4gcs.core.model.drone.LinkLossOutlook
+import io.github.hoonjaegui.px4gcs.core.model.drone.LinkLossPolicy
+import io.github.hoonjaegui.px4gcs.core.model.drone.TelemetryField
+import io.github.hoonjaegui.px4gcs.core.model.drone.Timestamp
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

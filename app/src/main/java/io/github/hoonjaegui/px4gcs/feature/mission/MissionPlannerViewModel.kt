@@ -2,12 +2,12 @@ package io.github.hoonjaegui.px4gcs.feature.mission
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.hoonjaegui.px4gcs.core.mission.MissionPlan
-import io.github.hoonjaegui.px4gcs.core.mission.MissionValidationError
-import io.github.hoonjaegui.px4gcs.core.mission.MissionValidator
-import io.github.hoonjaegui.px4gcs.core.mission.Waypoint
-import io.github.hoonjaegui.px4gcs.core.mission.WaypointProblem
-import io.github.hoonjaegui.px4gcs.core.model.DroneState
+import io.github.hoonjaegui.px4gcs.core.model.mission.MissionPlan
+import io.github.hoonjaegui.px4gcs.core.model.mission.MissionValidationError
+import io.github.hoonjaegui.px4gcs.core.domain.mission.MissionValidator
+import io.github.hoonjaegui.px4gcs.core.model.mission.Waypoint
+import io.github.hoonjaegui.px4gcs.core.model.mission.WaypointProblem
+import io.github.hoonjaegui.px4gcs.core.model.drone.DroneState
 import io.github.hoonjaegui.px4gcs.domain.drone.DroneRepository
 import io.github.hoonjaegui.px4gcs.domain.mission.MissionPlanRepository
 import dagger.hilt.android.lifecycle.HiltViewModel

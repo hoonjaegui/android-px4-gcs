@@ -1,4 +1,13 @@
-package io.github.hoonjaegui.px4gcs.core.model
+package io.github.hoonjaegui.px4gcs.core.domain.drone
+
+import io.github.hoonjaegui.px4gcs.core.model.drone.ConnectionStatus
+import io.github.hoonjaegui.px4gcs.core.model.drone.DroneState
+import io.github.hoonjaegui.px4gcs.core.model.drone.LinkLossAction
+import io.github.hoonjaegui.px4gcs.core.model.drone.LinkLossOutlook
+import io.github.hoonjaegui.px4gcs.core.model.drone.LinkLossPolicy
+import io.github.hoonjaegui.px4gcs.core.model.drone.MessageSeverity
+import io.github.hoonjaegui.px4gcs.core.model.drone.Timestamp
+import io.github.hoonjaegui.px4gcs.core.model.drone.VehicleMessage
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -11,26 +20,26 @@ class LinkLossOutlookTest {
 
     @Test
     fun `no outlook while connected`() {
-        assertNull(LinkLossOutlook.of(DroneState(connection = ConnectionStatus.CONNECTED), nowElapsedMs = 99_000L))
+        assertNull(LinkLossOutlookPolicy.evaluate(DroneState(connection = ConnectionStatus.CONNECTED), nowElapsedMs = 99_000L))
     }
 
     @Test
     fun `unknown when params were never read`() {
-        assertEquals(LinkLossOutlook.Unknown, LinkLossOutlook.of(lost, nowElapsedMs = 12_000L))
+        assertEquals(LinkLossOutlook.Unknown, LinkLossOutlookPolicy.evaluate(lost, nowElapsedMs = 12_000L))
     }
 
     @Test
     fun `px4 default does nothing on link loss`() {
         val state = lost.copy(linkLossPolicy = LinkLossPolicy(LinkLossAction.DISABLED, timeoutSec = 10))
-        assertEquals(LinkLossOutlook.NoAction, LinkLossOutlook.of(state, nowElapsedMs = 99_000L))
+        assertEquals(LinkLossOutlook.NoAction, LinkLossOutlookPolicy.evaluate(state, nowElapsedMs = 99_000L))
     }
 
     @Test
     fun `pending before timeout then triggered after`() {
         val state = lost.copy(linkLossPolicy = LinkLossPolicy(LinkLossAction.RETURN, timeoutSec = 10))
 
-        assertEquals(LinkLossOutlook.Pending(LinkLossAction.RETURN, remainingSec = 7), LinkLossOutlook.of(state, nowElapsedMs = 13_000L))
-        assertEquals(LinkLossOutlook.Triggered(LinkLossAction.RETURN, sinceSec = 5), LinkLossOutlook.of(state, nowElapsedMs = 25_000L))
+        assertEquals(LinkLossOutlook.Pending(LinkLossAction.RETURN, remainingSec = 7), LinkLossOutlookPolicy.evaluate(state, nowElapsedMs = 13_000L))
+        assertEquals(LinkLossOutlook.Triggered(LinkLossAction.RETURN, sinceSec = 5), LinkLossOutlookPolicy.evaluate(state, nowElapsedMs = 25_000L))
     }
 
     @Test
@@ -52,6 +61,6 @@ class LinkLossOutlookTest {
     @Test
     fun `no failsafe expected when vehicle was disarmed`() {
         val state = lost.copy(armed = false, linkLossPolicy = LinkLossPolicy(LinkLossAction.RETURN, timeoutSec = 10))
-        assertEquals(LinkLossOutlook.Disarmed, LinkLossOutlook.of(state, nowElapsedMs = 25_000L))
+        assertEquals(LinkLossOutlook.Disarmed, LinkLossOutlookPolicy.evaluate(state, nowElapsedMs = 25_000L))
     }
 }

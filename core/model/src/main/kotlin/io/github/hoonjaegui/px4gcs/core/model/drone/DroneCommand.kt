@@ -1,4 +1,4 @@
-package io.github.hoonjaegui.px4gcs.core.model
+package io.github.hoonjaegui.px4gcs.core.model.drone
 
 /** GCS가 보낼 수 있는 명령. */
 enum class DroneCommand {
@@ -38,12 +38,4 @@ enum class CommandFailureReason {
     /** 응답(ACK)을 못 받음 → 명령이 전달·실행됐는지 알 수 없다. Telemetry로 확인해야 한다. */
     TIMEOUT,
     UNKNOWN,
-}
-
-/** UI에 보여줄 명령 진행 상태. */
-sealed interface CommandState {
-    data object Idle : CommandState
-    data object Running : CommandState
-    data object Success : CommandState
-    data class Failed(val reason: CommandFailureReason, val detail: String, val vehicleMessage: String? = null) : CommandState
 }

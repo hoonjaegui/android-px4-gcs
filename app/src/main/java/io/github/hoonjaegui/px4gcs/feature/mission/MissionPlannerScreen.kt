@@ -37,10 +37,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.github.hoonjaegui.px4gcs.core.mission.MissionValidationError
-import io.github.hoonjaegui.px4gcs.core.mission.MissionValidator
-import io.github.hoonjaegui.px4gcs.core.mission.Waypoint
-import io.github.hoonjaegui.px4gcs.core.mission.WaypointProblem
+import io.github.hoonjaegui.px4gcs.core.model.mission.MissionValidationError
+import io.github.hoonjaegui.px4gcs.core.domain.mission.MissionValidator
+import io.github.hoonjaegui.px4gcs.core.model.mission.Waypoint
+import io.github.hoonjaegui.px4gcs.core.model.mission.WaypointProblem
 import java.util.Locale
 
 @Composable

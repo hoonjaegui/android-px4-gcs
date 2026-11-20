@@ -2,16 +2,17 @@ package io.github.hoonjaegui.px4gcs.data.drone
 
 import android.os.SystemClock
 import android.util.Log
-import io.github.hoonjaegui.px4gcs.core.model.CommandFailureReason
-import io.github.hoonjaegui.px4gcs.core.model.CommandResult
-import io.github.hoonjaegui.px4gcs.core.model.ConnectionStatus
-import io.github.hoonjaegui.px4gcs.core.model.DroneState
-import io.github.hoonjaegui.px4gcs.core.model.LinkLossAction
-import io.github.hoonjaegui.px4gcs.core.model.LinkLossPolicy
-import io.github.hoonjaegui.px4gcs.core.model.MessageSeverity
-import io.github.hoonjaegui.px4gcs.core.model.VehicleMessage
-import io.github.hoonjaegui.px4gcs.core.model.TelemetryField
-import io.github.hoonjaegui.px4gcs.core.model.Timestamp
+import io.github.hoonjaegui.px4gcs.core.model.drone.CommandFailureReason
+import io.github.hoonjaegui.px4gcs.core.model.drone.CommandResult
+import io.github.hoonjaegui.px4gcs.core.model.drone.ConnectionStatus
+import io.github.hoonjaegui.px4gcs.core.model.drone.DroneState
+import io.github.hoonjaegui.px4gcs.core.model.drone.FlightMode
+import io.github.hoonjaegui.px4gcs.core.model.drone.LinkLossAction
+import io.github.hoonjaegui.px4gcs.core.model.drone.LinkLossPolicy
+import io.github.hoonjaegui.px4gcs.core.model.drone.MessageSeverity
+import io.github.hoonjaegui.px4gcs.core.model.drone.VehicleMessage
+import io.github.hoonjaegui.px4gcs.core.model.drone.TelemetryField
+import io.github.hoonjaegui.px4gcs.core.model.drone.Timestamp
 import io.github.hoonjaegui.px4gcs.di.ApplicationScope
 import io.github.hoonjaegui.px4gcs.domain.drone.DroneRepository
 import io.mavsdk.action.Action
@@ -92,7 +93,7 @@ class DefaultDroneRepository @Inject constructor(
                 .toStateUpdate { copy(linkLossPolicy = it) },
             dataSource.headingDeg.toTelemetryUpdate(TelemetryField.HEADING) { copy(heading = it) },
             dataSource.armed.toStateUpdate { copy(armed = it) },
-            dataSource.flightMode.toStateUpdate { copy(flightMode = it.toDisplayName()) },
+            dataSource.flightMode.toStateUpdate { copy(flightMode = it.toFlightMode()) },
         )
             .scan(DroneState()) { state, update -> update(state) }
             .stateIn(scope, SharingStarted.Eagerly, DroneState())
@@ -225,12 +226,22 @@ class DefaultDroneRepository @Inject constructor(
         this >= Telemetry.FixType.FIX_3D
 
     /** MAVSDK enum을 UI 표시용 문자열로. (UI가 MAVSDK 타입을 몰라도 되게) */
-    private fun Telemetry.FlightMode.toDisplayName(): String = when (this) {
-        Telemetry.FlightMode.POSCTL -> "POSITION"
-        Telemetry.FlightMode.ALTCTL -> "ALTITUDE"
-        Telemetry.FlightMode.RETURN_TO_LAUNCH -> "RETURN"
-        Telemetry.FlightMode.FOLLOW_ME -> "FOLLOW ME"
-        else -> name
+    private fun Telemetry.FlightMode.toFlightMode(): FlightMode = when (this) {
+        Telemetry.FlightMode.READY -> FlightMode.READY
+        Telemetry.FlightMode.TAKEOFF -> FlightMode.TAKEOFF
+        Telemetry.FlightMode.HOLD -> FlightMode.HOLD
+        Telemetry.FlightMode.MISSION -> FlightMode.MISSION
+        Telemetry.FlightMode.RETURN_TO_LAUNCH -> FlightMode.RETURN
+        Telemetry.FlightMode.LAND -> FlightMode.LAND
+        Telemetry.FlightMode.OFFBOARD -> FlightMode.OFFBOARD
+        Telemetry.FlightMode.FOLLOW_ME -> FlightMode.FOLLOW_ME
+        Telemetry.FlightMode.MANUAL -> FlightMode.MANUAL
+        Telemetry.FlightMode.ALTCTL -> FlightMode.ALTITUDE
+        Telemetry.FlightMode.POSCTL -> FlightMode.POSITION
+        Telemetry.FlightMode.ACRO -> FlightMode.ACRO
+        Telemetry.FlightMode.STABILIZED -> FlightMode.STABILIZED
+        Telemetry.FlightMode.RATTITUDE -> FlightMode.RATTITUDE
+        Telemetry.FlightMode.UNKNOWN -> FlightMode.UNKNOWN
     }
 
     init {

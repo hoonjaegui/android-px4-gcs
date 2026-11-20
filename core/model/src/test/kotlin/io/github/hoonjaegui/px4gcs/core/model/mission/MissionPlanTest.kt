@@ -1,4 +1,4 @@
-package io.github.hoonjaegui.px4gcs.core.mission
+package io.github.hoonjaegui.px4gcs.core.model.mission
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame

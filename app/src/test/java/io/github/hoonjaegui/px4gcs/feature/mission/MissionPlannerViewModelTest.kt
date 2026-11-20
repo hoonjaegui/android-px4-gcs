@@ -1,11 +1,11 @@
 package io.github.hoonjaegui.px4gcs.feature.mission
 
-import io.github.hoonjaegui.px4gcs.core.model.ConnectionStatus
-import io.github.hoonjaegui.px4gcs.core.model.DroneState
-import io.github.hoonjaegui.px4gcs.core.mission.MissionPlan
-import io.github.hoonjaegui.px4gcs.core.mission.MissionValidationError
-import io.github.hoonjaegui.px4gcs.core.mission.Waypoint
-import io.github.hoonjaegui.px4gcs.core.mission.WaypointProblem
+import io.github.hoonjaegui.px4gcs.core.model.drone.ConnectionStatus
+import io.github.hoonjaegui.px4gcs.core.model.drone.DroneState
+import io.github.hoonjaegui.px4gcs.core.model.mission.MissionPlan
+import io.github.hoonjaegui.px4gcs.core.model.mission.MissionValidationError
+import io.github.hoonjaegui.px4gcs.core.model.mission.Waypoint
+import io.github.hoonjaegui.px4gcs.core.model.mission.WaypointProblem
 import io.github.hoonjaegui.px4gcs.testing.FakeDroneRepository
 import io.github.hoonjaegui.px4gcs.testing.FakeMissionPlanRepository
 import io.github.hoonjaegui.px4gcs.testing.MainDispatcherRule

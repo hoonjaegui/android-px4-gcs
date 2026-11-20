@@ -1,4 +1,4 @@
-package io.github.hoonjaegui.px4gcs.core.mission
+package io.github.hoonjaegui.px4gcs.core.model.mission
 
 /**
  * Mission의 한 지점. MAVSDK 타입을 전혀 모른다.
@@ -9,7 +9,7 @@ package io.github.hoonjaegui.px4gcs.core.mission
  *   해발(AMSL) 절대고도가 아니다. 홈이 해발 489m인 취리히 SITL에서 30m는 해발 519m를 뜻한다.
  *   PX4 내부 좌표(NED)의 z와도 다르다 — NED는 아래가 +라서 30m 위는 z = -30.
  *
- * 값의 유효성(범위, NaN)은 여기서 막지 않는다. 검사는 [MissionValidator] 한 곳에서 한다(A2).
+ * 값의 유효성(범위, NaN)은 여기서 막지 않는다. 검사는 domain의 `MissionValidator` 한 곳에서 한다.
  */
 data class Waypoint(
     val latitudeDeg: Double,

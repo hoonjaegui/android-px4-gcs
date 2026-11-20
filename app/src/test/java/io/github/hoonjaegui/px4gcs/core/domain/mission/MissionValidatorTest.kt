@@ -1,15 +1,18 @@
-package io.github.hoonjaegui.px4gcs.core.mission
+package io.github.hoonjaegui.px4gcs.core.domain.mission
 
-import io.github.hoonjaegui.px4gcs.core.mission.MissionValidationError.Empty
-import io.github.hoonjaegui.px4gcs.core.mission.MissionValidationError.InvalidWaypoint
-import io.github.hoonjaegui.px4gcs.core.mission.MissionValidationError.TooCloseToPrevious
-import io.github.hoonjaegui.px4gcs.core.mission.MissionValidator.MAX_ALTITUDE_M
-import io.github.hoonjaegui.px4gcs.core.mission.MissionValidator.MIN_ALTITUDE_M
-import io.github.hoonjaegui.px4gcs.core.mission.WaypointProblem.ALTITUDE_TOO_HIGH
-import io.github.hoonjaegui.px4gcs.core.mission.WaypointProblem.ALTITUDE_TOO_LOW
-import io.github.hoonjaegui.px4gcs.core.mission.WaypointProblem.INVALID_ALTITUDE
-import io.github.hoonjaegui.px4gcs.core.mission.WaypointProblem.INVALID_LATITUDE
-import io.github.hoonjaegui.px4gcs.core.mission.WaypointProblem.INVALID_LONGITUDE
+import io.github.hoonjaegui.px4gcs.core.model.mission.MissionPlan
+import io.github.hoonjaegui.px4gcs.core.model.mission.Waypoint
+
+import io.github.hoonjaegui.px4gcs.core.model.mission.MissionValidationError.Empty
+import io.github.hoonjaegui.px4gcs.core.model.mission.MissionValidationError.InvalidWaypoint
+import io.github.hoonjaegui.px4gcs.core.model.mission.MissionValidationError.TooCloseToPrevious
+import io.github.hoonjaegui.px4gcs.core.domain.mission.MissionValidator.MAX_ALTITUDE_M
+import io.github.hoonjaegui.px4gcs.core.domain.mission.MissionValidator.MIN_ALTITUDE_M
+import io.github.hoonjaegui.px4gcs.core.model.mission.WaypointProblem.ALTITUDE_TOO_HIGH
+import io.github.hoonjaegui.px4gcs.core.model.mission.WaypointProblem.ALTITUDE_TOO_LOW
+import io.github.hoonjaegui.px4gcs.core.model.mission.WaypointProblem.INVALID_ALTITUDE
+import io.github.hoonjaegui.px4gcs.core.model.mission.WaypointProblem.INVALID_LATITUDE
+import io.github.hoonjaegui.px4gcs.core.model.mission.WaypointProblem.INVALID_LONGITUDE
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

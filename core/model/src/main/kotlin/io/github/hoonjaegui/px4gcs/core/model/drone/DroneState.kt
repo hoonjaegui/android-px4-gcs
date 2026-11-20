@@ -1,4 +1,4 @@
-package io.github.hoonjaegui.px4gcs.core.model
+package io.github.hoonjaegui.px4gcs.core.model.drone
 
 /**
  * GCS 도메인 모델. MAVSDK 타입을 전혀 모른다.
@@ -11,7 +11,7 @@ data class DroneState(
     /** 마지막으로 연결이 끊긴 시각. 연결 중이면 null. */
     val connectionLostAt: Timestamp? = null,
     val armed: Boolean = false,
-    val flightMode: String? = null,
+    val flightMode: FlightMode? = null,
     /** 마지막으로 "신뢰할 수 있었던" 위경도. GPS/EKF가 불량이면 갱신하지 않는다 → [withPosition]. */
     val latitude: Double? = null,
     val longitude: Double? = null,

@@ -1,6 +1,6 @@
 package io.github.hoonjaegui.px4gcs.testing
 
-import io.github.hoonjaegui.px4gcs.core.mission.MissionPlan
+import io.github.hoonjaegui.px4gcs.core.model.mission.MissionPlan
 import io.github.hoonjaegui.px4gcs.domain.mission.MissionPlanRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

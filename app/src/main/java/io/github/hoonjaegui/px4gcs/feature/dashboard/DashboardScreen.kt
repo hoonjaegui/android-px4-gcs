@@ -29,18 +29,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.github.hoonjaegui.px4gcs.core.model.CommandFailureReason
-import io.github.hoonjaegui.px4gcs.core.model.CommandState
-import io.github.hoonjaegui.px4gcs.core.model.ConnectionStatus
-import io.github.hoonjaegui.px4gcs.core.model.DroneCommand
-import io.github.hoonjaegui.px4gcs.core.model.DroneState
-import io.github.hoonjaegui.px4gcs.core.model.DroneWarningState
-import io.github.hoonjaegui.px4gcs.core.model.LinkLossAction
-import io.github.hoonjaegui.px4gcs.core.model.LinkLossOutlook
-import io.github.hoonjaegui.px4gcs.core.model.LinkLossPolicy
-import io.github.hoonjaegui.px4gcs.core.model.MessageSeverity
-import io.github.hoonjaegui.px4gcs.core.model.TelemetryField
-import io.github.hoonjaegui.px4gcs.core.model.Timestamp
+import io.github.hoonjaegui.px4gcs.core.model.drone.CommandFailureReason
+import io.github.hoonjaegui.px4gcs.core.model.drone.ConnectionStatus
+import io.github.hoonjaegui.px4gcs.core.model.drone.DroneCommand
+import io.github.hoonjaegui.px4gcs.core.model.drone.DroneState
+import io.github.hoonjaegui.px4gcs.core.model.drone.FlightMode
+import io.github.hoonjaegui.px4gcs.core.model.drone.DroneWarningState
+import io.github.hoonjaegui.px4gcs.core.model.drone.LinkLossAction
+import io.github.hoonjaegui.px4gcs.core.model.drone.LinkLossOutlook
+import io.github.hoonjaegui.px4gcs.core.model.drone.LinkLossPolicy
+import io.github.hoonjaegui.px4gcs.core.model.drone.MessageSeverity
+import io.github.hoonjaegui.px4gcs.core.model.drone.TelemetryField
+import io.github.hoonjaegui.px4gcs.core.model.drone.Timestamp
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -109,7 +109,7 @@ fun DashboardScreen(
                 ConnectionStatus.LOST -> Danger
             },
         )
-        TelemetryItem("Flight Mode", state.flightMode ?: NO_DATA, staleNote = heartbeatNote)
+        TelemetryItem("Flight Mode", state.flightMode?.label() ?: NO_DATA, staleNote = heartbeatNote)
         TelemetryItem(
             label = "Armed",
             value = if (state.armed) "TRUE" else "FALSE",
@@ -349,3 +349,6 @@ private fun DashboardPreview() {
         onLinkLossActionSelected = {},
     )
 }
+
+/** "RETURN", "FOLLOW ME" 처럼 화면에 보일 비행 모드 이름. */
+private fun FlightMode.label(): String = name.replace('_', ' ')

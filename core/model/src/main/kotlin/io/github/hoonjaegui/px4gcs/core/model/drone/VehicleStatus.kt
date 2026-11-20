@@ -1,4 +1,4 @@
-package io.github.hoonjaegui.px4gcs.core.model
+package io.github.hoonjaegui.px4gcs.core.model.drone
 
 /** PX4가 보낸 사람이 읽는 메시지 (MAVLink STATUSTEXT). 예: "Arming denied: Resolve system health failures first". */
 data class VehicleMessage(
@@ -52,20 +52,4 @@ sealed interface LinkLossOutlook {
 
     /** timeout이 지남. 기체는 [action]에 들어갔을 것이다 (확인은 재연결 후에만 가능). */
     data class Triggered(val action: LinkLossAction, val sinceSec: Long) : LinkLossOutlook
-
-    companion object {
-        /** 연결 상태가 LOST가 아니면 null. */
-        fun of(state: DroneState, nowElapsedMs: Long): LinkLossOutlook? {
-            val lostAt = state.connectionLostAt ?: return null
-            if (state.connection != ConnectionStatus.LOST) return null
-            // armed는 끊기기 직전 마지막으로 알던 값이다 (끊긴 뒤에는 갱신되지 않는다).
-            if (!state.armed) return Disarmed
-            val policy = state.linkLossPolicy ?: return Unknown
-            if (policy.action == LinkLossAction.DISABLED) return NoAction
-            // GCS의 LOST 판정(3초)과 PX4의 판정 시점은 정확히 같지 않다. 대략적인 예상치다.
-            val lostForSec = (nowElapsedMs - lostAt.elapsedMs) / 1000
-            val remaining = policy.timeoutSec - lostForSec
-            return if (remaining > 0) Pending(policy.action, remaining) else Triggered(policy.action, -remaining)
-        }
-    }
 }

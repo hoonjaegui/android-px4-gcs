@@ -1,8 +1,8 @@
 package io.github.hoonjaegui.px4gcs.testing
 
-import io.github.hoonjaegui.px4gcs.core.model.CommandResult
-import io.github.hoonjaegui.px4gcs.core.model.DroneState
-import io.github.hoonjaegui.px4gcs.core.model.LinkLossAction
+import io.github.hoonjaegui.px4gcs.core.model.drone.CommandResult
+import io.github.hoonjaegui.px4gcs.core.model.drone.DroneState
+import io.github.hoonjaegui.px4gcs.core.model.drone.LinkLossAction
 import io.github.hoonjaegui.px4gcs.domain.drone.DroneRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 

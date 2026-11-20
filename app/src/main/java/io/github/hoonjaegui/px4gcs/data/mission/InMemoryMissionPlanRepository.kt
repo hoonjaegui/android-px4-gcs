@@ -1,6 +1,6 @@
 package io.github.hoonjaegui.px4gcs.data.mission
 
-import io.github.hoonjaegui.px4gcs.core.mission.MissionPlan
+import io.github.hoonjaegui.px4gcs.core.model.mission.MissionPlan
 import io.github.hoonjaegui.px4gcs.domain.mission.MissionPlanRepository
 import javax.inject.Inject
 import javax.inject.Singleton

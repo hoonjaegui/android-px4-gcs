@@ -25,5 +25,7 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "android-px4-gcs"
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 include(":app")
+include(":core:model")
  

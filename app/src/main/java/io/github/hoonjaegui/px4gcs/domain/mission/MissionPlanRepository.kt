@@ -1,6 +1,6 @@
 package io.github.hoonjaegui.px4gcs.domain.mission
 
-import io.github.hoonjaegui.px4gcs.core.mission.MissionPlan
+import io.github.hoonjaegui.px4gcs.core.model.mission.MissionPlan
 import kotlinx.coroutines.flow.StateFlow
 
 /**
