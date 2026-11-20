@@ -228,3 +228,4 @@ python3 tools/mavlink_udp_tcp_bridge.py          # PX4 UDP 14540 <-> TCP 5760
   - ViewModel 2개는 UseCase만 주입(Repository·Clock 직접 의존 제거). Mission VM은 입력 문자열 해석(NotANumber)과 거부 표시만, 편집 규칙은 UseCase
   - 새 규칙: `SetLinkLossActionUseCase`가 TERMINATE/DISARM/UNKNOWN을 `IllegalArgumentException`으로 거부(전에는 화면이 선택지를 안 보여주는 것으로만 막음)
   - 테스트 69개(app 9 / model 11 / domain 49). domain 테스트용 Fake·`TestClock`(runTest 가상 시간에 묶음)은 6단계에서 `:core:testing`으로 옮길 패키지명으로 domain test에 임시 배치. 변이 실험: ticker를 한 번만 emit하게 바꾸면 stale 테스트 실패. 실기기: Waypoint 추가·중복 탭 거부 확인
+- [x] 6. `:core:testing` (2026-11-20) — JVM. `FakeDroneRepository`(호출 기록 `calls`, 응답 `commandResult`), `FakeMissionPlanRepository`(`savedPlans`), `TestClock`, `MainDispatcherRule`. `api(core:domain, coroutines-test, junit)` → 각 모듈은 `testImplementation(projects.core.testing)` 한 줄. app test의 중복 Fake 삭제. 테스트 69개 그대로

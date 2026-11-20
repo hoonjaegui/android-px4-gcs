@@ -15,9 +15,9 @@ import io.github.hoonjaegui.px4gcs.core.model.mission.MissionPlan
 import io.github.hoonjaegui.px4gcs.core.model.mission.MissionValidationError
 import io.github.hoonjaegui.px4gcs.core.model.mission.Waypoint
 import io.github.hoonjaegui.px4gcs.core.model.mission.WaypointProblem
-import io.github.hoonjaegui.px4gcs.testing.FakeDroneRepository
-import io.github.hoonjaegui.px4gcs.testing.FakeMissionPlanRepository
-import io.github.hoonjaegui.px4gcs.testing.MainDispatcherRule
+import io.github.hoonjaegui.px4gcs.core.testing.FakeDroneRepository
+import io.github.hoonjaegui.px4gcs.core.testing.FakeMissionPlanRepository
+import io.github.hoonjaegui.px4gcs.core.testing.MainDispatcherRule
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope

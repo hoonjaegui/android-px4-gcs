@@ -10,5 +10,5 @@ dependencies {
     // @Inject만 필요하다. domain은 Hilt(DI 프레임워크)를 모른다.
     implementation(libs.javax.inject)
 
-    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(projects.core.testing)
 }
