@@ -5,8 +5,8 @@ import io.github.hoonjaegui.px4gcs.BuildConfig
 import io.github.hoonjaegui.px4gcs.core.common.time.Clock
 import io.github.hoonjaegui.px4gcs.data.drone.DefaultDroneRepository
 import io.github.hoonjaegui.px4gcs.data.mission.InMemoryMissionPlanRepository
-import io.github.hoonjaegui.px4gcs.domain.drone.DroneRepository
-import io.github.hoonjaegui.px4gcs.domain.mission.MissionPlanRepository
+import io.github.hoonjaegui.px4gcs.core.domain.drone.DroneRepository
+import io.github.hoonjaegui.px4gcs.core.domain.mission.MissionPlanRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides

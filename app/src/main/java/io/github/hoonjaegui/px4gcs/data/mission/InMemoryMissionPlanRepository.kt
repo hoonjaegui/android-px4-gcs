@@ -1,7 +1,7 @@
 package io.github.hoonjaegui.px4gcs.data.mission
 
 import io.github.hoonjaegui.px4gcs.core.model.mission.MissionPlan
-import io.github.hoonjaegui.px4gcs.domain.mission.MissionPlanRepository
+import io.github.hoonjaegui.px4gcs.core.domain.mission.MissionPlanRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.MutableStateFlow

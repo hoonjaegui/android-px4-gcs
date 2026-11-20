@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.hoonjaegui.px4gcs.core.model.mission.MissionEditRejection
 import io.github.hoonjaegui.px4gcs.core.model.mission.MissionValidationError
 import io.github.hoonjaegui.px4gcs.core.domain.mission.MissionValidator
 import io.github.hoonjaegui.px4gcs.core.model.mission.Waypoint
@@ -209,8 +210,12 @@ private fun WaypointProblem.message(): String = when (this) {
 
 private fun EditRejection.message(): String = when (this) {
     is EditRejection.NotANumber -> "\"$input\" is not a number"
-    is EditRejection.InvalidWaypoint -> problems.joinToString(", ") { it.message() }
-    is EditRejection.TooCloseToPrevious ->
+    is EditRejection.Rejected -> reason.message()
+}
+
+private fun MissionEditRejection.message(): String = when (this) {
+    is MissionEditRejection.InvalidWaypoint -> problems.joinToString(", ") { it.message() }
+    is MissionEditRejection.TooCloseToPrevious ->
         "only ${String.format(Locale.US, "%.1f", distanceM)} m from the previous waypoint " +
             "(min ${MissionValidator.MIN_SEGMENT_M.fmt()} m)"
 }

@@ -1,4 +1,4 @@
-package io.github.hoonjaegui.px4gcs.domain.drone
+package io.github.hoonjaegui.px4gcs.core.domain.drone
 
 import io.github.hoonjaegui.px4gcs.core.model.drone.CommandResult
 import io.github.hoonjaegui.px4gcs.core.model.drone.DroneState

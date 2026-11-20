@@ -14,7 +14,7 @@ import io.github.hoonjaegui.px4gcs.core.model.drone.TelemetryField
 import io.github.hoonjaegui.px4gcs.core.model.drone.Timestamp
 import io.github.hoonjaegui.px4gcs.core.common.coroutine.ApplicationScope
 import io.github.hoonjaegui.px4gcs.core.common.time.Clock
-import io.github.hoonjaegui.px4gcs.domain.drone.DroneRepository
+import io.github.hoonjaegui.px4gcs.core.domain.drone.DroneRepository
 import io.mavsdk.action.Action
 import io.mavsdk.param.Param
 import io.mavsdk.telemetry.Telemetry

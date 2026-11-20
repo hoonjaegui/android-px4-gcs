@@ -15,6 +15,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import io.github.hoonjaegui.px4gcs.core.model.drone.VehiclePosition
 import io.github.hoonjaegui.px4gcs.core.model.mission.Waypoint
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
@@ -54,7 +55,7 @@ import org.maplibre.geojson.Point
 @Composable
 fun MissionMap(
     waypoints: List<Waypoint>,
-    vehicle: VehicleMarker?,
+    vehicle: VehiclePosition?,
     onMapClick: (latitudeDeg: Double, longitudeDeg: Double) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -201,7 +202,7 @@ private fun List<Waypoint>.toRouteFeature(): FeatureCollection =
         )
     }
 
-private fun VehicleMarker?.toFeatures(): FeatureCollection =
+private fun VehiclePosition?.toFeatures(): FeatureCollection =
     if (this == null) {
         FeatureCollection.fromFeatures(emptyList())
     } else {
