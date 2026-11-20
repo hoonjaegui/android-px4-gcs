@@ -5,10 +5,10 @@ plugins {
 }
 
 android {
-    namespace = "com.example.android_px4_gcs"
+    namespace = "io.github.hoonjaegui.px4gcs"
 
     defaultConfig {
-        applicationId = "com.example.android_px4_gcs"
+        applicationId = "io.github.hoonjaegui.px4gcs"
         versionCode = 1
         versionName = "1.0"
 

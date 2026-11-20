@@ -218,3 +218,4 @@ python3 tools/mavlink_udp_tcp_bridge.py          # PX4 UDP 14540 <-> TCP 5760
 
 - [x] 1. build-logic (2026-11-20) — `build-logic/convention`(NIA 방식, `settings.gradle.kts`의 `includeBuild`). 플러그인 6개: `px4gcs.android.application(.compose)`, `android.library(.compose)`, `jvm.library`, `hilt`(JVM=hilt-core / Android=hilt 플러그인+hilt-android). feature api/impl 플러그인은 참조할 모듈이 생기는 11단계에서 추가. 공통값: compileSdk 37.1, minSdk 24, targetSdk 36, Java/Kotlin 11. AGP 9 내장 Kotlin이라 kotlin-android 플러그인 없음. `.kt`에서 `Property = 값`은 `org.gradle.kotlin.dsl.assign` import 필요
   - 검증: 전환 전후 `:app` 의존성 해석 결과 동일(runtime 165 / unitTest 169개), APK badging(package·compileSdk 37·targetSdk 36) 동일, 단위 테스트 56개 통과, 실기기 Dashboard/Mission 탭 정상
+- [x] 2. 패키지명 (2026-11-20) — `com.example.android_px4_gcs` → `io.github.hoonjaegui.px4gcs` (namespace·applicationId·소스 경로, `git mv`로 이력 유지). 기존 앱은 기기에서 삭제. 주의: 패키지 변경 직후 Hilt 생성 코드가 옛 패키지를 참조해 `hiltJavaCompileDebug` 실패 → `./gradlew clean` 필요. 테스트 56개, 실기기 실행 확인
