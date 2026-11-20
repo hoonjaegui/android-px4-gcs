@@ -42,6 +42,7 @@ dependencies {
     implementation(projects.core.domain)
     implementation(projects.core.data.drone)
     implementation(projects.core.data.mission)
+    implementation(projects.core.designsystem)
     implementation(projects.core.model)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)

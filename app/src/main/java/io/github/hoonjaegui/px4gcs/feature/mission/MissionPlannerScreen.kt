@@ -29,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import io.github.hoonjaegui.px4gcs.core.designsystem.component.Notice
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
@@ -187,13 +188,6 @@ private fun WaypointRow(
         IconButton(onClick = { actions.onMove(index, index - 1) }, enabled = index > 0) { Text("▲") }
         IconButton(onClick = { actions.onMove(index, index + 1) }, enabled = !isLast) { Text("▼") }
         IconButton(onClick = { actions.onRemove(index) }) { Text("✕", color = MaterialTheme.colorScheme.error) }
-    }
-}
-
-@Composable
-private fun Notice(text: String, color: Color) {
-    Surface(color = color, shape = MaterialTheme.shapes.small, modifier = Modifier.fillMaxWidth()) {
-        Text(text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(8.dp))
     }
 }
 

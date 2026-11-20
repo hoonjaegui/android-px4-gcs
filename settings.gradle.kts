@@ -31,6 +31,7 @@ include(":core:common")
 include(":core:model")
 include(":core:domain")
 include(":core:testing")
+include(":core:designsystem")
 include(":core:data:drone")
 include(":core:data:mission")
  

@@ -10,6 +10,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import io.github.hoonjaegui.px4gcs.core.designsystem.theme.StatusColors
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
@@ -225,4 +226,4 @@ private const val PROP_COLOR = "color"
 
 private const val COLOR_WAYPOINT = "#1E88E5"
 private const val COLOR_VEHICLE = "#FDD835"
-private const val COLOR_STALE = "#9E9E9E"
+private val COLOR_STALE = StatusColors.hex(StatusColors.Stale)

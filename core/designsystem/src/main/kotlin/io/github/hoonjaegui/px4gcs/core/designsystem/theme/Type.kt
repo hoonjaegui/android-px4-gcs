@@ -1,4 +1,4 @@
-package io.github.hoonjaegui.px4gcs.ui.theme
+package io.github.hoonjaegui.px4gcs.core.designsystem.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

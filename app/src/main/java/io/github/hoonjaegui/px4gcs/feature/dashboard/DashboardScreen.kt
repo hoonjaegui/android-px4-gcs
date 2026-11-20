@@ -23,6 +23,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import io.github.hoonjaegui.px4gcs.core.designsystem.component.WarningBanner
+import io.github.hoonjaegui.px4gcs.core.designsystem.theme.StatusColors
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -45,10 +47,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val Danger = Color(0xFFC62828)
-private val Warning = Color(0xFFE65100)
 private val Ok = Color(0xFF2E7D32)
-private val Stale = Color(0xFF9E9E9E)
 
 @Composable
 fun DashboardRoute(
@@ -93,7 +92,7 @@ fun DashboardScreen(
         Text("PX4 GCS", style = MaterialTheme.typography.headlineMedium)
         WarningBanners(warnings)
         warnings.linkLossOutlook?.let { outlook ->
-            Text(outlook.describe(), color = Danger, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+            Text(outlook.describe(), color = StatusColors.Danger, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
         }
 
         TelemetryItem(
@@ -104,22 +103,22 @@ fun DashboardScreen(
                 ConnectionStatus.LOST -> "LOST"
             },
             valueColor = when (state.connection) {
-                ConnectionStatus.SEARCHING -> Stale
+                ConnectionStatus.SEARCHING -> StatusColors.Stale
                 ConnectionStatus.CONNECTED -> Ok
-                ConnectionStatus.LOST -> Danger
+                ConnectionStatus.LOST -> StatusColors.Danger
             },
         )
         TelemetryItem("Flight Mode", state.flightMode?.label() ?: NO_DATA, staleNote = heartbeatNote)
         TelemetryItem(
             label = "Armed",
             value = if (state.armed) "TRUE" else "FALSE",
-            valueColor = if (state.armed) Warning else Color.Unspecified,
+            valueColor = if (state.armed) StatusColors.Warning else Color.Unspecified,
             staleNote = heartbeatNote,
         )
         TelemetryItem(
             label = "Battery",
             value = state.batteryPercent?.let { "$it%" } ?: NO_DATA,
-            valueColor = if (warnings.lowBattery) Danger else Color.Unspecified,
+            valueColor = if (warnings.lowBattery) StatusColors.Danger else Color.Unspecified,
             staleNote = lastUpdate(TelemetryField.BATTERY),
         )
         TelemetryItem(
@@ -129,7 +128,7 @@ fun DashboardScreen(
                 true -> "3D FIX"
                 false -> "NO FIX"
             },
-            valueColor = if (warnings.gpsUnavailable) Danger else Color.Unspecified,
+            valueColor = if (warnings.gpsUnavailable) StatusColors.Danger else Color.Unspecified,
             staleNote = lastUpdate(TelemetryField.GPS),
         )
         TelemetryItem("Altitude", state.altitude?.let { "%.1fm".format(it) } ?: NO_DATA, staleNote = lastUpdate(TelemetryField.ALTITUDE))
@@ -174,8 +173,8 @@ fun DashboardScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = when (message.severity) {
                     MessageSeverity.INFO -> Color.Unspecified
-                    MessageSeverity.WARNING -> Warning
-                    MessageSeverity.ERROR -> Danger
+                    MessageSeverity.WARNING -> StatusColors.Warning
+                    MessageSeverity.ERROR -> StatusColors.Danger
                 },
             )
         }
@@ -219,8 +218,8 @@ private fun LinkLossSettingSection(
             }
             CommandState.Success -> Text("Saved on vehicle (verified by read-back)", color = Ok, style = MaterialTheme.typography.labelMedium)
             is CommandState.Failed -> Column {
-                Text("Failed to set ${setting.requested?.name}: ${s.reason.headline()}", color = Danger, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
-                Text(s.detail, style = MaterialTheme.typography.labelSmall, color = Stale)
+                Text("Failed to set ${setting.requested?.name}: ${s.reason.headline()}", color = StatusColors.Danger, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                Text(s.detail, style = MaterialTheme.typography.labelSmall, color = StatusColors.Stale)
             }
         }
     }
@@ -237,25 +236,13 @@ private fun LinkLossOutlook.describe(): String = when (this) {
 
 @Composable
 private fun WarningBanners(warnings: DroneWarningState) {
-    val messages = buildList {
+    buildList {
         if (warnings.connectionLost) add("CONNECTION LOST")
         if (warnings.telemetryStale) add("TELEMETRY LOST")
         if (warnings.gpsUnavailable) add("GPS SIGNAL LOST")
         if (warnings.positionUnreliable) add("POSITION UNRELIABLE")
         if (warnings.lowBattery) add("LOW BATTERY")
-    }
-    messages.forEach { message ->
-        Text(
-            text = "⚠ $message",
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Danger, RoundedCornerShape(8.dp))
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-        )
-    }
+    }.forEach { WarningBanner(it) }
 }
 
 private const val NO_DATA = "--"
@@ -273,9 +260,9 @@ private fun TelemetryItem(
     val isStale = staleNote != null
     Column {
         Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.titleLarge, color = if (isStale) Stale else valueColor)
-        staleNote?.let { Text(it, style = MaterialTheme.typography.labelMedium, color = Warning) }
-        note?.let { Text(it, style = MaterialTheme.typography.labelMedium, color = Danger) }
+        Text(value, style = MaterialTheme.typography.titleLarge, color = if (isStale) StatusColors.Stale else valueColor)
+        staleNote?.let { Text(it, style = MaterialTheme.typography.labelMedium, color = StatusColors.Warning) }
+        note?.let { Text(it, style = MaterialTheme.typography.labelMedium, color = StatusColors.Danger) }
     }
 }
 
@@ -295,10 +282,10 @@ private fun CommandRow(
             CommandState.Running -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
             CommandState.Success -> Text("ACCEPTED", color = Ok)
             is CommandState.Failed -> Column {
-                Text(state.reason.headline(), color = Danger, fontWeight = FontWeight.Bold)
+                Text(state.reason.headline(), color = StatusColors.Danger, fontWeight = FontWeight.Bold)
                 state.vehicleMessage?.let { Text("PX4: $it", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold) }
                 Text(state.reason.guidance(), style = MaterialTheme.typography.labelMedium)
-                Text(state.detail, style = MaterialTheme.typography.labelSmall, color = Stale)
+                Text(state.detail, style = MaterialTheme.typography.labelSmall, color = StatusColors.Stale)
             }
         }
     }

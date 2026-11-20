@@ -1,4 +1,4 @@
-package io.github.hoonjaegui.px4gcs.ui.theme
+package io.github.hoonjaegui.px4gcs.core.designsystem.theme
 
 import android.app.Activity
 import android.os.Build
@@ -34,7 +34,7 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun Androidpx4gcsTheme(
+fun Px4GcsTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
