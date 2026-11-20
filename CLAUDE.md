@@ -194,3 +194,9 @@ python3 tools/mavlink_udp_tcp_bridge.py          # PX4 UDP 14540 <-> TCP 5760
 - [x] 주말 검증 (2026-11-13) — 상세 `docs/verification/phase2-week1-weekend.md`
   - 실기기 SITL 연결, Takeoff/Land 3/3, Connection Loss(`NAV_DLL_ACT=2`, link-cut → RTL·착지·Disarm → 재연결 시 실제 상태 반영) 3/3, C++ `-Werror` 클린 빌드·테스트 7개 통과
   - 발견: 착지 후 Altitude `-0.0m` 표시 (평일 작업 후보). 이전 세션 파라미터(`SYS_FAILURE_EN 1`, `NAV_DLL_ACT 1`)가 남아 있었음 → 원복, 실험 뒤 `sitl_fault.sh status` 확인
+
+### Week 2 — Mission Planner & C++ 기초 ② (브랜치 `phase2-week2`)
+
+- 계획: Android A1 모델 → A2 유효성 검사 → A3 Fake 기반 ViewModel 테스트 → A4 지도 UI / C++ week2 1~5단계(class·생성자/소멸자 → Stack/Heap·`leaks` → vector/string → optional → unique_ptr·RAII). 이번 주는 Mission 업로드/실행 안 함(Week 3)
+- 지도: **MapLibre + OpenFreeMap** 스타일(`https://tiles.openfreemap.org/styles/liberty`, 키 불필요, SLA 없음). OSM attribution 표시 필요. 오프라인 지도는 후보로만 기록
+- [x] A1. Domain Model (2026-11-20) — `core/mission/MissionPlan.kt`: `Waypoint(latitudeDeg, longitudeDeg, relativeAltitudeM)`(WGS84 도 단위, 홈 기준 상대고도·위쪽 +), 불변 `MissionPlan`의 `add/remove/move/updateAltitude`는 새 plan 반환, 잘못된 index는 `IndexOutOfBoundsException`(호출 코드 버그). 값 검사는 A2 `MissionValidator`로 분리. `MissionPlanTest` 11개, 전체 29개 통과
