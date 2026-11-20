@@ -1,7 +1,7 @@
 # 0001. 멀티모듈 + Clean Architecture로 전환
 
 - 날짜: 2026-11-20 (Phase 2 Week 2, Android A1~A4 완료 직후 · C++ 시작 전)
-- 상태: **결정됨** (세부 항목 일부 미정 — 아래 "미정")
+- 상태: **결정됨**
 
 ## 배경
 
@@ -26,16 +26,29 @@
 | 구조 | 멀티모듈 + Clean Architecture |
 | data 모듈 | **drone / mission으로 분리** (MAVSDK·mavsdk_server 의존성을 drone 쪽에만 가둠) |
 | UseCase | **모든 기능에 만든다.** ViewModel은 UseCase만 호출 — 일관된 규칙이 리뷰 기준이 되도록 |
-| 빌드 설정 | Now in Android(NIA)의 `build-logic` convention plugin 방식 참고 |
+| 모듈 구성·빌드 | **NIA 방식** (`build-logic` convention plugin, `:core:common`, JVM `:core:model`, `:core:testing`, `:core:designsystem`). jacoco/flavor/firebase/lint/screenshot은 제외 |
+| 의존 방향 | **Clean Architecture** — Repository interface는 `:core:domain`, 구현은 `:core:data:*`(`data → domain`). NIA의 `domain → data`는 따르지 않음 |
+| Navigation | **Navigation 3** + NIA처럼 `:core:navigation`, `:feature:*:api`(NavKey) / `:impl`(화면·ViewModel·EntryProvider). Navigation Compose 2.8.5(A4-1)는 교체 |
+| 패키지명 | `com.example.android_px4_gcs` → **`io.github.hoonjaegui.px4gcs`** (applicationId 동일. 기존 앱은 기기에서 삭제 필요) |
 | 진행 원칙 | 모듈 하나 옮길 때마다 단위 테스트 전체 + 실기기 동작 확인 후 다음 모듈 |
 
-## 미정 (NIA 확인 결과 생긴 쟁점)
+## NIA와 다르게 가는 부분 (2026-11-20 확인, NIA `2982e63`)
 
-NIA(`android/nowinandroid`, 2026-10-20 커밋 `2982e63` 기준)는 Android 공식 아키텍처 가이드를 따르며 위 결정과 다른 점이 있다:
+NIA는 Android 공식 아키텍처 가이드를 따른다: `core:domain → core:data`, Repository interface는 `core:data`, UseCase는 선택(3개뿐, ViewModel이 Repository 직접 사용). 이 프로젝트는 "모든 기능에 UseCase"를 리뷰 규칙으로 쓰기 위해 의존 방향과 UseCase 규칙만 Clean Architecture를 따른다.
 
-- **의존 방향**: NIA는 `core:domain → core:data`(domain이 data에 의존), Repository interface도 `core:data`에 있다. Clean Architecture는 반대로 `data → domain`(interface는 domain, 구현은 data).
-- **UseCase**: NIA는 domain을 선택 사항으로 두고 UseCase가 3개뿐, ViewModel이 Repository를 직접 많이 쓴다(`UserDataRepository` 6곳 등). → "모든 기능에 UseCase"와 다름.
-- **Navigation**: NIA는 Navigation 3 + `feature:*:api / impl` 분리. 현재 앱은 Grider_Rider와 같은 Navigation Compose 2.8.5(A4-1).
-- **패키지명**: `com.example.android_px4_gcs` 변경 여부.
+## 목표 모듈
 
-결정되면 이 문서에 추가한다.
+```
+:app                                   Application, MainActivity, NavDisplay + 하단 탭, DI 조립
+:feature:dashboard:api / :impl         api = NavKey, impl = Screen + ViewModel + EntryProvider
+:feature:mission:api / :impl
+:core:navigation                       Navigator, NavigationState (NIA 기반)
+:core:designsystem                     테마, 공통 UI 요소
+:core:domain      (JVM)                Repository interface, UseCase, Policy/Validator
+:core:model       (JVM)                DroneState, Waypoint, MissionPlan …
+:core:common      (JVM)                Dispatcher, ApplicationScope, Clock
+:core:data:drone                       MAVSDK 구현 (mavsdk 의존성은 여기만)
+:core:data:mission                     InMemory 구현
+:core:testing                          Fake 저장소, TestClock, MainDispatcherRule
+build-logic/convention                 convention plugin
+```
