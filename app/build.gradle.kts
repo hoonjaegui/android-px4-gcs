@@ -57,7 +57,6 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.navigation3.ui)
 
-    testImplementation(projects.core.testing)
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)

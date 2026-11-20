@@ -2,8 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- MAVLink UDP + local gRPC (MAVSDK Java <-> mavsdk_server) -->
-    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 권한은 필요한 모듈이 각자 선언한다 (core:data:drone, feature:mission:impl). 빌드 시 병합된다. -->
 
     <application
         android:name=".GcsApplication"
