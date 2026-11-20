@@ -4,9 +4,7 @@ import android.os.SystemClock
 import io.github.hoonjaegui.px4gcs.BuildConfig
 import io.github.hoonjaegui.px4gcs.core.common.time.Clock
 import io.github.hoonjaegui.px4gcs.data.drone.DefaultDroneRepository
-import io.github.hoonjaegui.px4gcs.data.mission.InMemoryMissionPlanRepository
 import io.github.hoonjaegui.px4gcs.core.domain.drone.DroneRepository
-import io.github.hoonjaegui.px4gcs.core.domain.mission.MissionPlanRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -41,11 +39,4 @@ object AppModule {
 abstract class DroneModule {
     @Binds
     abstract fun bindDroneRepository(impl: DefaultDroneRepository): DroneRepository
-}
-
-@Module
-@InstallIn(SingletonComponent::class)
-abstract class MissionModule {
-    @Binds
-    abstract fun bindMissionPlanRepository(impl: InMemoryMissionPlanRepository): MissionPlanRepository
 }

@@ -1,4 +1,4 @@
-package io.github.hoonjaegui.px4gcs.data.mission
+package io.github.hoonjaegui.px4gcs.core.data.mission
 
 import io.github.hoonjaegui.px4gcs.core.model.mission.MissionPlan
 import io.github.hoonjaegui.px4gcs.core.domain.mission.MissionPlanRepository
