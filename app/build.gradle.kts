@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.px4gcs.android.application)
     alias(libs.plugins.px4gcs.android.application.compose)
     alias(libs.plugins.px4gcs.hilt)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -44,6 +45,7 @@ dependencies {
     implementation(projects.core.data.mission)
     implementation(projects.core.designsystem)
     implementation(projects.core.model)
+    implementation(projects.core.navigation)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui)
@@ -53,7 +55,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.hilt.navigation.compose)
-    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.navigation3.ui)
     implementation(libs.maplibre.android.sdk)
     testImplementation(projects.core.testing)
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
