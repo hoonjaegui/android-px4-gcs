@@ -1,6 +1,5 @@
 package io.github.hoonjaegui.px4gcs.data.drone
 
-import android.os.SystemClock
 import android.util.Log
 import io.github.hoonjaegui.px4gcs.core.model.drone.CommandFailureReason
 import io.github.hoonjaegui.px4gcs.core.model.drone.CommandResult
@@ -13,7 +12,8 @@ import io.github.hoonjaegui.px4gcs.core.model.drone.MessageSeverity
 import io.github.hoonjaegui.px4gcs.core.model.drone.VehicleMessage
 import io.github.hoonjaegui.px4gcs.core.model.drone.TelemetryField
 import io.github.hoonjaegui.px4gcs.core.model.drone.Timestamp
-import io.github.hoonjaegui.px4gcs.di.ApplicationScope
+import io.github.hoonjaegui.px4gcs.core.common.coroutine.ApplicationScope
+import io.github.hoonjaegui.px4gcs.core.common.time.Clock
 import io.github.hoonjaegui.px4gcs.domain.drone.DroneRepository
 import io.mavsdk.action.Action
 import io.mavsdk.param.Param
@@ -50,6 +50,7 @@ import kotlinx.coroutines.flow.stateIn
 @Singleton
 class DefaultDroneRepository @Inject constructor(
     private val dataSource: MavsdkDroneDataSource,
+    private val clock: Clock,
     @ApplicationScope scope: CoroutineScope,
 ) : DroneRepository {
 
@@ -67,7 +68,7 @@ class DefaultDroneRepository @Inject constructor(
     private fun <T> Flow<T>.toStateUpdate(apply: DroneState.(T) -> DroneState): Flow<Update> =
         map { value -> Update { it.apply(value) } }
 
-    private fun now() = Timestamp(elapsedMs = SystemClock.elapsedRealtime(), epochMs = System.currentTimeMillis())
+    private fun now() = Timestamp(elapsedMs = clock.elapsedRealtimeMs(), epochMs = clock.epochMs())
 
     /** Telemetry 스트림이 아닌, Repository가 직접 만든 상태 변경 (예: 파라미터를 쓴 뒤 다시 읽은 값). */
     private val localUpdates = MutableSharedFlow<Update>(extraBufferCapacity = 16)
@@ -166,7 +167,7 @@ class DefaultDroneRepository @Inject constructor(
 
     /** MAVSDK 예외를 도메인 결과로 변환하고, 실패면 PX4가 보낸 사유 메시지를 붙인다. */
     private suspend fun runCommand(name: String, block: suspend () -> Unit): CommandResult {
-        val sentAt = SystemClock.elapsedRealtime()
+        val sentAt = clock.elapsedRealtimeMs()
         val result = executeCommand(name, block)
         if (result !is CommandResult.Failure || result.reason == CommandFailureReason.NOT_CONNECTED) return result
         return result.copy(vehicleMessage = awaitVehicleMessageSince(sentAt))

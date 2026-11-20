@@ -9,7 +9,7 @@ object DroneWarningPolicy {
     const val STALE_AFTER_MS = 3_000L
     const val LOW_BATTERY_PERCENT = 20
 
-    /** @param nowElapsedMs SystemClock.elapsedRealtime 기준 현재 시각. */
+    /** @param nowElapsedMs Clock.elapsedRealtimeMs 기준 현재 시각 (monotonic). */
     fun evaluate(state: DroneState, nowElapsedMs: Long): DroneWarningState = DroneWarningState(
         connectionLost = state.connection == ConnectionStatus.LOST,
         staleFields = state.receivedAt

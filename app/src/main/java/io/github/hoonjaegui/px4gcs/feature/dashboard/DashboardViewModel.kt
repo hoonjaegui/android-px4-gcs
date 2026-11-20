@@ -1,8 +1,8 @@
 package io.github.hoonjaegui.px4gcs.feature.dashboard
 
-import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.hoonjaegui.px4gcs.core.common.time.Clock
 import io.github.hoonjaegui.px4gcs.core.model.drone.CommandResult
 import io.github.hoonjaegui.px4gcs.core.model.drone.DroneCommand
 import io.github.hoonjaegui.px4gcs.core.model.drone.DroneState
@@ -28,7 +28,7 @@ data class DashboardUiState(
     val commandStates: Map<DroneCommand, CommandState> = emptyMap(),
     /** 통신 두절 설정 쓰기 진행 상태. */
     val linkLossSetting: LinkLossSettingState = LinkLossSettingState(),
-    /** "N초 전" 계산용 현재 시각 (SystemClock.elapsedRealtime ms). */
+    /** "N초 전" 계산용 현재 시각 (Clock.elapsedRealtimeMs). */
     val nowElapsedMs: Long = 0L,
 )
 
@@ -41,6 +41,7 @@ data class LinkLossSettingState(
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val repository: DroneRepository,
+    private val clock: Clock,
 ) : ViewModel() {
 
     private val commandStates = MutableStateFlow<Map<DroneCommand, CommandState>>(emptyMap())
@@ -50,15 +51,15 @@ class DashboardViewModel @Inject constructor(
      * Telemetry가 "안 오는 것"은 이벤트가 발생하지 않으므로 Flow만으로는 감지할 수 없다.
      * 시계를 따로 흘려서 "마지막 수신 후 얼마나 지났나"를 주기적으로 다시 계산한다.
      */
-    private val clock = flow {
+    private val ticker = flow {
         while (true) {
-            emit(SystemClock.elapsedRealtime())
+            emit(clock.elapsedRealtimeMs())
             delay(CLOCK_TICK_MS)
         }
     }
 
     val uiState: StateFlow<DashboardUiState> =
-        combine(repository.droneState, commandStates, linkLossSetting, clock) { drone, commands, setting, now ->
+        combine(repository.droneState, commandStates, linkLossSetting, ticker) { drone, commands, setting, now ->
             DashboardUiState(
                 drone = drone,
                 warnings = DroneWarningPolicy.evaluate(drone, now),

@@ -1,13 +1,15 @@
 package io.github.hoonjaegui.px4gcs.data.drone
 
 import android.util.Log
-import io.github.hoonjaegui.px4gcs.di.ApplicationScope
+import io.github.hoonjaegui.px4gcs.core.common.coroutine.ApplicationScope
+import io.github.hoonjaegui.px4gcs.core.common.coroutine.Dispatcher
+import io.github.hoonjaegui.px4gcs.core.common.coroutine.Px4Dispatchers
 import io.github.hoonjaegui.px4gcs.di.MavsdkConnectionUrl
 import io.mavsdk.System
 import io.mavsdk.mavsdkserver.MavsdkServer
 import io.mavsdk.telemetry.Telemetry
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +38,7 @@ import javax.inject.Singleton
 @Singleton
 class MavsdkDroneDataSource @Inject constructor(
     @ApplicationScope private val scope: CoroutineScope,
+    @Dispatcher(Px4Dispatchers.IO) private val ioDispatcher: CoroutineDispatcher,
     @MavsdkConnectionUrl private val systemAddress: String,
 ) {
     private val server = MavsdkServer()
@@ -45,7 +48,7 @@ class MavsdkDroneDataSource @Inject constructor(
     val system: StateFlow<System?> = _system.asStateFlow()
 
     fun start() {
-        scope.launch(Dispatchers.IO) {
+        scope.launch(ioDispatcher) {
             Log.i(TAG, "mavsdk_server starting, listening on $systemAddress (vehicle discovery...)")
             // run()은 첫 Vehicle의 HEARTBEAT를 받을 때까지 블로킹된다 = Vehicle Discovery.
             val grpcPort = server.run(systemAddress)
