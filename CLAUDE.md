@@ -214,6 +214,8 @@ python3 tools/mavlink_udp_tcp_bridge.py          # PX4 UDP 14540 <-> TCP 5760
 
 ### 멀티모듈 전환 (브랜치 `phase2-arch`, `phase2-week2`에서 분기 — 끝나면 phase2-week2에 머지)
 
+> **현재: 14단계 완료, 사용자 리뷰 대기.** 다른 컴퓨터에서 리뷰 → [`docs/review/phase2-arch-review.md`](docs/review/phase2-arch-review.md) (리뷰 순서·결정할 것·시작 방법). 리뷰 후 phase2-week2 머지 → C++ 1단계
+
 계획 14단계(결정 `docs/decisions/0001-…`): 1 build-logic → 2 패키지명 → 3 core:model → 4 core:common → 5 core:domain(UseCase 전부) → 6 core:testing → 7 data:mission → 8 data:drone → 9 designsystem → 10 core:navigation + Navigation 3 → 11 feature api/impl → 12 app 정리 → 13 Konsist 규칙 테스트 + 문서 → 14 실기기 회귀. **단계마다 커밋 → 사용자 리뷰 승인 → 다음 단계.** C++ 1~5단계도 이번 주 안에 진행(사용자 결정)
 
 - [x] 1. build-logic (2026-11-20) — `build-logic/convention`(NIA 방식, `settings.gradle.kts`의 `includeBuild`). 플러그인 6개: `px4gcs.android.application(.compose)`, `android.library(.compose)`, `jvm.library`, `hilt`(JVM=hilt-core / Android=hilt 플러그인+hilt-android). feature api/impl 플러그인은 참조할 모듈이 생기는 11단계에서 추가. 공통값: compileSdk 37.1, minSdk 24, targetSdk 36, Java/Kotlin 11. AGP 9 내장 Kotlin이라 kotlin-android 플러그인 없음. `.kt`에서 `Property = 값`은 `org.gradle.kotlin.dsl.assign` import 필요
