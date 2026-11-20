@@ -39,4 +39,5 @@ include(":feature:dashboard:api")
 include(":feature:dashboard:impl")
 include(":feature:mission:api")
 include(":feature:mission:impl")
+include(":konsist")
  

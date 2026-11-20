@@ -41,6 +41,19 @@ PX4 MAVLink 포트:
 | Coroutines (+rx2 브리지) | 1.10.2 |
 | ABI | arm64-v8a, x86_64만 패키징 |
 | 실기기 | USB 연결 (`adb reverse` + UDP↔TCP 브리지) |
+| applicationId / 패키지 | `io.github.hoonjaegui.px4gcs` (2026-11-20, 이전 `com.example.android_px4_gcs`) |
+
+### 멀티모듈 전환 때 추가 (2026-11-20, 구조는 [architecture.md](architecture.md))
+
+| 항목 | 값 | 비고 |
+| --- | --- | --- |
+| Navigation 3 (`navigation3-runtime`/`-ui`) | 1.2.0 | NIA와 동일. 1.2.2는 2026-11-19 배포라 보류 |
+| `lifecycle-viewmodel-navigation3` | 2.11.0 | lifecycle과 같은 버전 |
+| `hilt-navigation-compose` (`hiltViewModel()`) | 1.2.0 | Nav3에서 동작 확인 → NIA의 alpha 대체품 불필요 |
+| kotlinx-serialization (플러그인 / core) | Kotlin 2.2.10 / 1.7.3 | NavKey `@Serializable` |
+| MapLibre Android | 13.7.1 | Week 2 A4 |
+| Konsist | 0.18.1 | JVM 17 필요 → `:konsist` 모듈만 17 |
+| 빌드 설정 | `build-logic/convention` | convention plugin 8개 (`px4gcs.*`) |
 
 ### MAVSDK
 
@@ -49,9 +62,9 @@ PX4 MAVLink 포트:
 | `io.mavsdk:mavsdk` (Java API) | 4.1.0 — RxJava 2.2.21, gRPC 1.61.1 (okhttp, protobuf-lite) |
 | `io.mavsdk:mavsdk-server` (AAR) | 4.1.0 — `libmavsdk_server.so` (C++ mavsdk_server, ABI당 약 37MB) |
 | 런타임 보고 버전 | logcat `Mavsdk: MAVSDK version: 0.0.0` — AAR 빌드에 버전 태그가 들어가지 않음. 실제 버전은 Gradle 좌표(4.1.0)로 관리 |
-| `libc++_shared.so` | AAR에 없음 → NDK r27.3 것을 `app/src/main/jniLibs`에 직접 넣음 (16KB 정렬) |
+| `libc++_shared.so` | AAR에 없음 → NDK r27.3 것을 `core/data/drone/src/main/jniLibs`에 직접 넣음 (16KB 정렬, 2026-11-20 app에서 이동) |
 
-실행 구조: [architecture.md](architecture.md#1-프로세스-구조) 참고.
+실행 구조: [architecture-baseline-phase1.md](architecture-baseline-phase1.md#1-프로세스-구조) 참고.
 
 ## 접속 URL
 
