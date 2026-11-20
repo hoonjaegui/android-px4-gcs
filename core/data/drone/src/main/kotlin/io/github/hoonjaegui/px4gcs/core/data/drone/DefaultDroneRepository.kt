@@ -1,11 +1,10 @@
-package io.github.hoonjaegui.px4gcs.data.drone
+package io.github.hoonjaegui.px4gcs.core.data.drone
 
 import android.util.Log
 import io.github.hoonjaegui.px4gcs.core.model.drone.CommandFailureReason
 import io.github.hoonjaegui.px4gcs.core.model.drone.CommandResult
 import io.github.hoonjaegui.px4gcs.core.model.drone.ConnectionStatus
 import io.github.hoonjaegui.px4gcs.core.model.drone.DroneState
-import io.github.hoonjaegui.px4gcs.core.model.drone.FlightMode
 import io.github.hoonjaegui.px4gcs.core.model.drone.LinkLossAction
 import io.github.hoonjaegui.px4gcs.core.model.drone.LinkLossPolicy
 import io.github.hoonjaegui.px4gcs.core.model.drone.MessageSeverity
@@ -17,7 +16,6 @@ import io.github.hoonjaegui.px4gcs.core.common.time.Clock
 import io.github.hoonjaegui.px4gcs.core.domain.drone.DroneRepository
 import io.mavsdk.action.Action
 import io.mavsdk.param.Param
-import io.mavsdk.telemetry.Telemetry
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.roundToInt
@@ -48,7 +46,7 @@ import kotlinx.coroutines.flow.stateIn
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @Singleton
-class DefaultDroneRepository @Inject constructor(
+internal class DefaultDroneRepository @Inject constructor(
     private val dataSource: MavsdkDroneDataSource,
     private val clock: Clock,
     @ApplicationScope scope: CoroutineScope,
@@ -145,14 +143,6 @@ class DefaultDroneRepository @Inject constructor(
         }
     }
 
-    private fun Param.ParamResult.Result.toFailureReason(): CommandFailureReason = when (this) {
-        Param.ParamResult.Result.NO_SYSTEM,
-        Param.ParamResult.Result.CONNECTION_ERROR -> CommandFailureReason.NOT_CONNECTED
-        Param.ParamResult.Result.TIMEOUT -> CommandFailureReason.TIMEOUT
-        Param.ParamResult.Result.UNKNOWN -> CommandFailureReason.UNKNOWN
-        else -> CommandFailureReason.REJECTED // 범위 초과, 읽기 전용, 타입 불일치 등
-    }
-
     private suspend fun readLinkLossPolicy(): LinkLossPolicy? = try {
         LinkLossPolicy(
             action = LinkLossAction.fromNavDllAct(dataSource.getParamInt("NAV_DLL_ACT")),
@@ -200,50 +190,6 @@ class DefaultDroneRepository @Inject constructor(
             Log.w(TAG, "$name failed", e)
             CommandResult.Failure(CommandFailureReason.UNKNOWN, e.message ?: e.javaClass.simpleName)
         }
-
-    private fun Action.ActionResult.Result.toFailureReason(): CommandFailureReason = when (this) {
-        Action.ActionResult.Result.NO_SYSTEM,
-        Action.ActionResult.Result.CONNECTION_ERROR -> CommandFailureReason.NOT_CONNECTED
-        Action.ActionResult.Result.COMMAND_DENIED,
-        Action.ActionResult.Result.COMMAND_DENIED_LANDED_STATE_UNKNOWN,
-        Action.ActionResult.Result.COMMAND_DENIED_NOT_LANDED,
-        Action.ActionResult.Result.UNSUPPORTED,
-        Action.ActionResult.Result.FAILED -> CommandFailureReason.REJECTED
-        Action.ActionResult.Result.BUSY -> CommandFailureReason.BUSY
-        Action.ActionResult.Result.TIMEOUT -> CommandFailureReason.TIMEOUT
-        else -> CommandFailureReason.UNKNOWN
-    }
-
-    private fun Telemetry.StatusTextType.toSeverity(): MessageSeverity = when (this) {
-        Telemetry.StatusTextType.DEBUG,
-        Telemetry.StatusTextType.INFO,
-        Telemetry.StatusTextType.NOTICE -> MessageSeverity.INFO
-        Telemetry.StatusTextType.WARNING -> MessageSeverity.WARNING
-        else -> MessageSeverity.ERROR
-    }
-
-    /** 3D fix 이상이어야 위치로 쓸 수 있다. */
-    private fun Telemetry.FixType.hasPositionFix(): Boolean =
-        this >= Telemetry.FixType.FIX_3D
-
-    /** MAVSDK enum을 UI 표시용 문자열로. (UI가 MAVSDK 타입을 몰라도 되게) */
-    private fun Telemetry.FlightMode.toFlightMode(): FlightMode = when (this) {
-        Telemetry.FlightMode.READY -> FlightMode.READY
-        Telemetry.FlightMode.TAKEOFF -> FlightMode.TAKEOFF
-        Telemetry.FlightMode.HOLD -> FlightMode.HOLD
-        Telemetry.FlightMode.MISSION -> FlightMode.MISSION
-        Telemetry.FlightMode.RETURN_TO_LAUNCH -> FlightMode.RETURN
-        Telemetry.FlightMode.LAND -> FlightMode.LAND
-        Telemetry.FlightMode.OFFBOARD -> FlightMode.OFFBOARD
-        Telemetry.FlightMode.FOLLOW_ME -> FlightMode.FOLLOW_ME
-        Telemetry.FlightMode.MANUAL -> FlightMode.MANUAL
-        Telemetry.FlightMode.ALTCTL -> FlightMode.ALTITUDE
-        Telemetry.FlightMode.POSCTL -> FlightMode.POSITION
-        Telemetry.FlightMode.ACRO -> FlightMode.ACRO
-        Telemetry.FlightMode.STABILIZED -> FlightMode.STABILIZED
-        Telemetry.FlightMode.RATTITUDE -> FlightMode.RATTITUDE
-        Telemetry.FlightMode.UNKNOWN -> FlightMode.UNKNOWN
-    }
 
     init {
         dataSource.start()

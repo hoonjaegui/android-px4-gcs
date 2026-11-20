@@ -1,10 +1,10 @@
-package io.github.hoonjaegui.px4gcs.data.drone
+package io.github.hoonjaegui.px4gcs.core.data.drone
 
 import android.util.Log
 import io.github.hoonjaegui.px4gcs.core.common.coroutine.ApplicationScope
 import io.github.hoonjaegui.px4gcs.core.common.coroutine.Dispatcher
 import io.github.hoonjaegui.px4gcs.core.common.coroutine.Px4Dispatchers
-import io.github.hoonjaegui.px4gcs.di.MavsdkConnectionUrl
+import io.github.hoonjaegui.px4gcs.core.data.drone.di.MavsdkConnectionUrl
 import io.mavsdk.System
 import io.mavsdk.mavsdkserver.MavsdkServer
 import io.mavsdk.telemetry.Telemetry
@@ -36,7 +36,7 @@ import javax.inject.Singleton
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @Singleton
-class MavsdkDroneDataSource @Inject constructor(
+internal class MavsdkDroneDataSource @Inject constructor(
     @ApplicationScope private val scope: CoroutineScope,
     @Dispatcher(Px4Dispatchers.IO) private val ioDispatcher: CoroutineDispatcher,
     @MavsdkConnectionUrl private val systemAddress: String,
