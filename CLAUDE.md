@@ -211,3 +211,10 @@ python3 tools/mavlink_udp_tcp_bridge.py          # PX4 UDP 14540 <-> TCP 5760
   - 버그 수정: 지도 첫 로드의 세계 전체 화면이 camera-idle로 "저장 위치"가 돼서 기체 위치로 이동 안 함 → 초기 위치를 잡은 뒤부터만 저장
   - 실기기 + SITL: 지도가 기체(Irchelpark, 노란 마커)로 이동, 탭 3번 → Waypoint 1·2·3 + 경로선, 같은 지점 재탭 → `Rejected: only 0.0 m from the previous waypoint`, 고도 500 → `at most 120 m` 거부·입력칸 실제값 10으로 복귀, `abc` → `not a number`, 30 → 반영, #3 ▲ → 순서 변경, #1 ✕ → 삭제, 탭 전환 후 plan·카메라 유지. (adb `input keyevent ENTER`는 포커스가 MapView로 가면 지도 줌이 됨 — 테스트 조작 부작용, 소프트 키보드 Done과 무관)
 - **아키텍처 전환 결정 (2026-11-20)** — 사용자가 코드 리뷰를 직접 하기로 해서 멀티모듈 + Clean Architecture로 전환(계획서 9장 "모듈 구성 유지"와 다름). 상세·미정 항목은 `docs/decisions/0001-multi-module-clean-architecture.md`. 확정: data는 drone/mission 분리, UseCase는 모든 기능에, build-logic은 NIA 참고. C++ 1단계는 전환 후로 미룸. 코드 변경 전 계획 승인 받을 것
+
+### 멀티모듈 전환 (브랜치 `phase2-arch`, `phase2-week2`에서 분기 — 끝나면 phase2-week2에 머지)
+
+계획 14단계(결정 `docs/decisions/0001-…`): 1 build-logic → 2 패키지명 → 3 core:model → 4 core:common → 5 core:domain(UseCase 전부) → 6 core:testing → 7 data:mission → 8 data:drone → 9 designsystem → 10 core:navigation + Navigation 3 → 11 feature api/impl → 12 app 정리 → 13 Konsist 규칙 테스트 + 문서 → 14 실기기 회귀. **단계마다 커밋 → 사용자 리뷰 승인 → 다음 단계.** C++ 1~5단계도 이번 주 안에 진행(사용자 결정)
+
+- [x] 1. build-logic (2026-11-20) — `build-logic/convention`(NIA 방식, `settings.gradle.kts`의 `includeBuild`). 플러그인 6개: `px4gcs.android.application(.compose)`, `android.library(.compose)`, `jvm.library`, `hilt`(JVM=hilt-core / Android=hilt 플러그인+hilt-android). feature api/impl 플러그인은 참조할 모듈이 생기는 11단계에서 추가. 공통값: compileSdk 37.1, minSdk 24, targetSdk 36, Java/Kotlin 11. AGP 9 내장 Kotlin이라 kotlin-android 플러그인 없음. `.kt`에서 `Property = 값`은 `org.gradle.kotlin.dsl.assign` import 필요
+  - 검증: 전환 전후 `:app` 의존성 해석 결과 동일(runtime 165 / unitTest 169개), APK badging(package·compileSdk 37·targetSdk 36) 동일, 단위 테스트 56개 통과, 실기기 Dashboard/Mission 탭 정상

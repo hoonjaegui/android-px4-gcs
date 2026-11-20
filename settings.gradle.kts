@@ -1,4 +1,6 @@
 pluginManagement {
+    // convention plugin (px4gcs.*) — NIA와 같은 방식
+    includeBuild("build-logic")
     repositories {
         google {
             content {

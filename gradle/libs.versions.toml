@@ -44,8 +44,25 @@ androidx-navigation-compose = { group = "androidx.navigation", name = "navigatio
 maplibre-android-sdk = { group = "org.maplibre.gl", name = "android-sdk", version.ref = "maplibre" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 
+# build-logic (convention plugin)이 컴파일할 때만 쓰는 Gradle 플러그인 API
+android-gradlePlugin = { group = "com.android.tools.build", name = "gradle-api", version.ref = "agp" }
+kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
+compose-gradlePlugin = { group = "org.jetbrains.kotlin", name = "compose-compiler-gradle-plugin", version.ref = "kotlin" }
+ksp-gradlePlugin = { group = "com.google.devtools.ksp", name = "com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
+hilt-core = { group = "com.google.dagger", name = "hilt-core", version.ref = "hilt" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+
+# Convention plugins (build-logic/convention)
+px4gcs-android-application = { id = "px4gcs.android.application" }
+px4gcs-android-application-compose = { id = "px4gcs.android.application.compose" }
+px4gcs-android-library = { id = "px4gcs.android.library" }
+px4gcs-android-library-compose = { id = "px4gcs.android.library.compose" }
+px4gcs-jvm-library = { id = "px4gcs.jvm.library" }
+px4gcs-hilt = { id = "px4gcs.hilt" }
